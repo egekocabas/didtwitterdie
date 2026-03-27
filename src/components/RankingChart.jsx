@@ -39,8 +39,8 @@ export default function RankingChart({ data }) {
 
   return (
     <ChartWrapper
-      title="The consensus of 5 data sources"
-      description="Tranco aggregated ranking combining Cloudflare DNS, Cisco Umbrella, Chrome UX Report, Majestic, and Farsight passive DNS."
+      title="Domain popularity over time"
+      description="Combined ranking from Cloudflare DNS, Cisco Umbrella, Chrome UX, Majestic, and Farsight passive DNS via the Tranco List. Lower rank = more popular."
     >
       <TimeRangeSelector value={range} onChange={setRange} />
       <ResponsiveContainer width="100%" height={300}>

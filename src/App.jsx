@@ -3,10 +3,8 @@ import Layout from "./components/Layout";
 import LoadingSkeleton from "./components/LoadingSkeleton";
 import Footer from "./components/Footer";
 import HeroSection from "./components/HeroSection";
-import DnsChart from "./components/DnsChart";
 import TrendsChart from "./components/TrendsChart";
 import RankingChart from "./components/RankingChart";
-import RegionalChart from "./components/RegionalChart";
 import VerdictSection from "./components/VerdictSection";
 
 function ErrorState({ message }) {
@@ -40,11 +38,9 @@ function App() {
   return (
     <Layout>
       <div className="space-y-20">
-        <HeroSection radar={data.radar} />
-        <DnsChart data={data.radar} />
-        <TrendsChart />
+        <HeroSection radar={data.radar} tranco={data.tranco} />
         <RankingChart data={data.tranco} />
-        <RegionalChart data={data.radar} />
+        <TrendsChart />
         <VerdictSection data={data} />
         <Footer updatedAt={data.updated_at} />
       </div>

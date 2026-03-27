@@ -107,33 +107,25 @@ The core concept: compare `twitter.com` vs `x.com` across multiple metrics (DNS 
 
 ## Data Sources
 
-### 1. Cloudflare Radar API (DNS popularity)
+### 1. Cloudflare Radar API (DNS popularity bucket)
 
-- **What it measures**: How many people type `twitter.com` or `x.com` into their browser (DNS queries to 1.1.1.1 resolver)
-- **Why it matters**: DNS lookups happen BEFORE redirects, so `twitter.com` DNS queries = people still using the old name
+- **What it measures**: DNS query popularity bucket for domains on Cloudflare's 1.1.1.1 resolver
+- **What it returns**: Ranking buckets (top 200, top 500, top 1000, etc.) — NOT exact rank numbers
+- **Why it matters**: twitter.com being in a higher bucket (top 200) vs x.com (top 500) means more people still type twitter.com directly
 - **API**: Free, requires Cloudflare API token (free account)
 - **License**: CC BY-NC 4.0
-- **Historical data**: Available since September 2022 (covers pre-rebrand period)
-- **Granularity**: Weekly data points
-- **Data available**: Since September 26, 2022
+- **Limitation**: The `timeseries_groups` endpoint only covers the top ~110 domains (CDN/infrastructure-heavy). twitter.com and x.com are not in this list. Only the `domain/{domain}` endpoint works, returning bucket data without exact ranks.
 
-**Key endpoints**:
+**Key endpoint**:
 
 ```
-# Get domain rank details (current)
 GET https://api.cloudflare.com/client/v4/radar/ranking/domain/{domain}
 Headers: Authorization: Bearer {CLOUDFLARE_API_TOKEN}
 
-# Get domain rank time series (historical)
-GET https://api.cloudflare.com/client/v4/radar/ranking/timeseries_groups
-  ?domains=twitter.com,x.com
-  &dateRange=52w  (or custom date range)
-Headers: Authorization: Bearer {CLOUDFLARE_API_TOKEN}
+Response: { "result": { "details_0": { "bucket": "200", "rank": null } } }
 ```
 
-**Returns**: For top 100 domains, an ordered rank number. For others, ranking buckets (top 200, top 1000, etc.). Both twitter.com and x.com should be in the top 100.
-
-**Regional data**: Supports `location` parameter with alpha-2 country codes for per-country breakdown.
+**Used for**: DNS bucket badge in the Hero section and as a supplementary signal in the Verdict.
 
 ### 2. Google Trends (search interest)
 
@@ -196,44 +188,45 @@ Files in the `functions/` directory are automatically deployed as serverless API
 ### Main API route: `functions/api/data.js`
 
 ```javascript
-export async function onRequestGet({ env }) {
-  // 1. Try KV cache first
-  const cached = await env.CACHE.get("all_data", "json");
+async function fetchRadarData(env) {
+  const token = env.CLOUDFLARE_RADAR_TOKEN;
+  const headers = { Authorization: `Bearer ${token}` };
 
-  if (cached) {
-    return new Response(JSON.stringify(cached), {
-      headers: {
-        "Content-Type": "application/json",
-        "Access-Control-Allow-Origin": "*",
-        "Cache-Control": "public, max-age=3600" // browser cache 1hr
-      }
-    });
-  }
-
-  // 2. Cache miss — fetch live from active sources
-  const [radar, tranco] = await Promise.all([
-    fetchRadarData(env),
-    fetchTrancoData(env)
+  const [twitterRes, xRes] = await Promise.all([
+    fetch(`${RADAR_BASE}/domain/twitter.com`, { headers }),
+    fetch(`${RADAR_BASE}/domain/x.com`, { headers }),
   ]);
 
-  const data = {
-    radar,
-    trends: null, // Deferred to Phase 9
-    tranco,
-    updated_at: Date.now()
+  const [twitterJson, xJson] = await Promise.all([twitterRes.json(), xRes.json()]);
+
+  return {
+    twitter: { bucket: twitterJson?.result?.details_0?.bucket ?? null },
+    x: { bucket: xJson?.result?.details_0?.bucket ?? null },
   };
+}
+
+export async function onRequestGet({ env, request }) {
+  // 1. Try KV cache first
+  const cached = await env.CACHE.get("all_data", "json");
+  if (cached) return jsonResponse(cached);
+
+  // 2. Cache miss — fetch live from all sources
+  const [radarResult, trancoResult] = await Promise.allSettled([
+    fetchRadarData(env),
+    fetchTrancoData(env),
+  ]);
+
+  const radar = radarResult.status === "fulfilled" ? radarResult.value : null;
+  const tranco = trancoResult.status === "fulfilled" ? trancoResult.value : null;
+
+  const data = { radar, trends: null, tranco, updated_at: Date.now() };
 
   // 3. Save to KV with 24hr TTL
-  await env.CACHE.put("all_data", JSON.stringify(data), {
-    expirationTtl: 86400
-  });
+  if (radar || tranco) {
+    await env.CACHE.put("all_data", JSON.stringify(data), { expirationTtl: 86400 });
+  }
 
-  return new Response(JSON.stringify(data), {
-    headers: {
-      "Content-Type": "application/json",
-      "Access-Control-Allow-Origin": "*"
-    }
-  });
+  return jsonResponse(data);
 }
 ```
 
@@ -307,11 +300,11 @@ The data from all sources only changes daily/weekly. Without caching, every visi
 
 ### Data accumulation for Tranco
 
-Unlike Radar (which returns full history), Tranco only gives current rank. The cron worker must:
-1. Read existing `all_data` from KV
-2. Fetch today's Tranco rank for both domains
-3. Append to the Tranco historical array
-4. Write the updated data back to KV
+Tranco only returns ~39 days of daily ranks. The backend seeds from pre-computed quarterly historical data (2022–2026) stored inline in `functions/api/data.js` as `TRANCO_SEED`. On each cache miss:
+1. Read existing `tranco_history` from KV (or fall back to seed data if KV is empty)
+2. Fetch latest ~39 days from Tranco API for both domains
+3. Merge and deduplicate by date
+4. Write the updated history back to KV (no TTL — this is the accumulation store)
 
 ---
 
@@ -338,14 +331,9 @@ useEffect(() => {
 Each section receives only its slice of data as props:
 
 ```jsx
-<HeroSection
-  twitterRank={data.radar.twitter.at(-1).rank}
-  xRank={data.radar.x.at(-1).rank}
-/>
-<DnsChart data={data.radar} />
-{data.trends ? <TrendsChart data={data.trends} /> : <TrendsPlaceholder />}
+<HeroSection radar={data.radar} tranco={data.tranco} />
 <RankingChart data={data.tranco} />
-<RegionalChart data={data.radar} />
+{data.trends ? <TrendsChart data={data.trends} /> : <TrendsPlaceholder />}
 <VerdictSection data={data} />
 ```
 
@@ -355,65 +343,39 @@ Each section receives only its slice of data as props:
 
 ### Section 1: Hero — "Did Twitter die?"
 
-- **Data source**: Cloudflare Radar (current rank)
-- **API data used**: Latest rank for `twitter.com` and `x.com`
-- **Display**: Two big numbers side by side showing today's DNS popularity rank
-- **Example**: twitter.com = #8 vs x.com = #14
-- **Story**: Immediately answers the question — "People still type twitter.com more than x.com"
+- **Data source**: Tranco (current rank) + Cloudflare Radar (DNS bucket)
+- **API data used**: Latest rank from `data.tranco.twitter` / `data.tranco.x`, bucket from `data.radar.twitter.bucket` / `data.radar.x.bucket`
+- **Display**: Two big rank numbers side by side, each with a small "DNS: Top N" badge below
+- **Example**: twitter.com = #16 (DNS: Top 200) vs x.com = #59 (DNS: Top 500)
+- **Story**: Immediately answers the question with the most reliable aggregated data
 
-### Section 2: DNS popularity over time
+### Section 2: Domain popularity over time
 
-- **Data source**: Cloudflare Radar (time series)
-- **API data used**: `data.radar.twitter[]` and `data.radar.x[]` — arrays of `{ date, rank }` objects
+- **Data source**: Tranco (primary — 3+ years of history via seed + daily accumulation)
+- **API data used**: `data.tranco.twitter[]` and `data.tranco.x[]` — arrays of `{ date, rank }` objects
 - **Chart type**: **Line chart** (Recharts `<LineChart>`) — two lines, one for each domain
 - **X-axis**: Date
 - **Y-axis**: Rank (INVERTED — lower number = more popular, so #1 is at the top)
 - **Annotation**: Vertical dashed line at July 24, 2023 labeled "Rebrand to X"
 - **Time range selector**: 1M / 6M / 1Y / 3Y / ALL buttons
-- **Story**: "Who's winning the URL bar?"
-- **Comparison method**: Two lines on the same chart. Higher line (lower rank number) = more popular.
+- **Story**: "Domain popularity over time — the consensus of 5 data sources"
+- **Note**: Historical data from 2022 is pre-seeded from verified Tranco list downloads. New daily data is appended on each cache miss.
 
 ### Section 3: Search interest — what people Google (DEFERRED — Phase 9)
 
-> **MVP note**: This section is deferred to post-launch. For MVP, show a "Coming soon" placeholder. Google Trends has no official API, and unofficial scraping is fragile. Launch with Sections 1, 2, 4, 5, 6 first.
+> **MVP note**: This section is deferred to post-launch. For MVP, show a "Coming soon" placeholder. Google Trends has no official API, and unofficial scraping is fragile.
 
 - **Data source**: Google Trends
 - **API data used**: `data.trends.data[]` — array of `{ date, twitter, x_com, x_social }` where each value is 0-100
-- **Chart type**: **Area chart** (Recharts `<AreaChart>`) — overlapping semi-transparent colored areas
-- **X-axis**: Date
-- **Y-axis**: Interest score 0-100
+- **Chart type**: **Area chart** (Recharts `<AreaChart>`)
 - **Keywords compared**: "twitter" (blue), "x.com" (amber/orange), "x social media" (gray)
-- **Annotation**: Vertical dashed line at July 24, 2023
-- **Time range selector**: 1M / 6M / 1Y / 3Y / ALL buttons
 - **Story**: "Do people still search 'twitter' or have they switched to 'x'?"
-- **Comparison method**: Heights of the colored areas. The taller area = more searched term.
-- **Key difference from Section 2**: DNS = people typing the URL directly. Search = people Googling the name. These are different behaviors.
 
-### Section 4: Combined domain ranking
+### Section 4: The verdict
 
-- **Data source**: Tranco
-- **API data used**: `data.tranco.twitter[]` and `data.tranco.x[]` — arrays of `{ date, rank }` objects
-- **Chart type**: **Line chart or bar chart** — two series for each domain
-- **X-axis**: Date
-- **Y-axis**: Combined popularity rank (inverted, like Section 2)
-- **Time range selector**: dependent on available history (starts accumulating from first deploy)
-- **Story**: "The consensus of 5 different data sources"
-- **Comparison method**: Same as Section 2 but from aggregated multi-source data
-- **Note**: Tranco combines data from Cloudflare DNS + Cisco Umbrella DNS + Chrome UX Report + Majestic backlinks + Farsight passive DNS. It's asking 5 experts instead of 1.
-
-### Section 5: Regional breakdown
-
-- **Data source**: Cloudflare Radar (per-country)
-- **API data used**: Per-country rank data from Radar (using the `location` query parameter)
-- **Chart type**: **Horizontal bar chart** — top 10 countries, each showing twitter.com rank vs x.com rank
-- **Story**: Fun discovery angle — "Japan still loves Twitter" / "Brazil already switched to X"
-- **Comparison method**: Side-by-side bars per country
-
-### Section 6: The verdict
-
-- **Data source**: All sources combined
+- **Data source**: Tranco ranking + Cloudflare Radar DNS bucket
 - **Display**: A summary verdict card, e.g., "Twitter is ___% alive"
-- **Formula**: Simple logic based on latest data — if twitter.com rank is better than x.com, "The bird isn't dead yet." If x.com overtakes, "X has won."
+- **Formula**: Based on latest Tranco ranks — if twitter.com rank is lower (better) than x.com, "Not dead yet." Plus a line showing Radar DNS bucket comparison.
 - **Shareable**: Auto-generated OG image with the current verdict for social media sharing
 - **Viral hook**: When someone shares the URL on Twitter/X, the preview card shows the current score
 
@@ -483,34 +445,20 @@ The single `/api/data` endpoint returns this JSON structure:
 ```json
 {
   "radar": {
-    "twitter": [
-      { "date": "2022-09-26", "rank": 5 },
-      { "date": "2022-10-03", "rank": 5 },
-      { "date": "2023-07-30", "rank": 6 },
-      { "date": "2026-03-23", "rank": 8 }
-    ],
-    "x": [
-      { "date": "2023-07-30", "rank": 45 },
-      { "date": "2023-08-06", "rank": 38 },
-      { "date": "2026-03-23", "rank": 14 }
-    ],
-    "regional": {
-      "US": { "twitter_rank": 5, "x_rank": 10 },
-      "JP": { "twitter_rank": 3, "x_rank": 25 },
-      "BR": { "twitter_rank": 12, "x_rank": 8 }
-    }
+    "twitter": { "bucket": "200" },
+    "x": { "bucket": "500" }
   },
   "trends": null,
   "tranco": {
     "twitter": [
-      { "date": "2024-01-01", "rank": 4 },
-      { "date": "2024-01-02", "rank": 4 },
-      { "date": "2026-03-23", "rank": 6 }
+      { "date": "2022-09-01", "rank": 8 },
+      { "date": "2023-07-24", "rank": 7 },
+      { "date": "2026-03-01", "rank": 16 }
     ],
     "x": [
-      { "date": "2024-01-01", "rank": 18 },
-      { "date": "2024-01-02", "rank": 17 },
-      { "date": "2026-03-23", "rank": 15 }
+      { "date": "2024-03-01", "rank": 879 },
+      { "date": "2025-01-01", "rank": 87 },
+      { "date": "2026-03-01", "rank": 59 }
     ]
   },
   "updated_at": 1711540800000
@@ -542,12 +490,10 @@ didtwitterdie/
 │   │   └── useData.js             # Custom hook: fetch + cache /api/data
 │   ├── components/
 │   │   ├── Layout.jsx             # Page wrapper, dark mode, font
-│   │   ├── HeroSection.jsx        # Section 1: big numbers
-│   │   ├── DnsChart.jsx           # Section 2: Radar line chart
+│   │   ├── HeroSection.jsx        # Section 1: Tranco ranks + Radar bucket badges
+│   │   ├── RankingChart.jsx       # Section 2: Tranco domain popularity chart
 │   │   ├── TrendsChart.jsx        # Section 3: Trends area chart (placeholder for MVP)
-│   │   ├── RankingChart.jsx       # Section 4: Tranco chart
-│   │   ├── RegionalChart.jsx      # Section 5: per-country bars
-│   │   ├── VerdictSection.jsx     # Section 6: the verdict
+│   │   ├── VerdictSection.jsx     # Section 4: the verdict
 │   │   ├── TimeRangeSelector.jsx  # Reusable time range buttons
 │   │   ├── ChartWrapper.jsx       # Framer Motion scroll animation wrapper
 │   │   ├── RebrandAnnotation.jsx  # Vertical dashed line for July 24, 2023
@@ -644,7 +590,8 @@ Local development uses **Wrangler** (Cloudflare's CLI) which simulates the entir
 ```json
 {
   "scripts": {
-    "dev": "wrangler pages dev -- vite",
+    "dev": "vite",
+    "dev:full": "npm run build && wrangler pages dev dist",
     "build": "vite build",
     "preview": "wrangler pages dev dist",
     "deploy": "wrangler pages deploy dist"
@@ -652,11 +599,11 @@ Local development uses **Wrangler** (Cloudflare's CLI) which simulates the entir
 }
 ```
 
-The key command is `wrangler pages dev -- vite`. This:
-1. Starts Vite's dev server for the React frontend (hot reload, fast refresh)
-2. Wraps it with Wrangler's proxy that intercepts `/api/*` requests and routes them to Pages Functions with full KV access
+**`npm run dev`** — Vite-only dev server at `http://localhost:5173`. Hot reload, fast refresh. The `/api/data` endpoint does not exist, so `useData` falls back to mock data automatically. Use this for UI work.
 
-The dev server runs at `http://localhost:8788`.
+**`npm run dev:full`** — Builds Vite first, then starts Wrangler Pages dev server at `http://localhost:8788`. Simulates the full Cloudflare environment: Pages Functions at `/api/*`, local KV store, reads secrets from `.dev.vars`. Use this for testing the API and KV caching.
+
+> **Note**: `wrangler pages dev -- vite` (the old proxy-command approach) is deprecated in Wrangler 4.78. The `command` positional is no longer supported. The correct approach is to build first, then serve `dist`.
 
 ### Local secrets and environment variables
 
@@ -720,13 +667,11 @@ Or just rely on the API route's cache-miss fallback — it does the same fetchin
 ### Daily development workflow
 
 ```bash
-# Start dev server (frontend + backend + KV)
-npm run dev
+# Frontend-only dev (fast hot reload, mock data fallback)
+npm run dev            # http://localhost:5173
 
-# Open http://localhost:8788
-# Edit React code → instant hot reload
-# Edit functions/ → auto-restarts worker (~1s)
-# KV data persists between restarts
+# Full-stack dev (real API + KV, no hot reload)
+npm run dev:full       # http://localhost:8788
 
 # Before deploying:
 npm run build          # builds Vite to dist/
@@ -768,8 +713,8 @@ Copy the `id` value into your `wrangler.toml`. This only needs to be done once.
 ### Common wrangler commands
 
 ```bash
-# Start local dev server (frontend + backend + KV)
-npx wrangler pages dev -- npx vite
+# Start local dev server (build first, then serve with Wrangler)
+npm run build && npx wrangler pages dev dist
 
 # Deploy to Cloudflare Pages
 npx wrangler pages deploy dist
@@ -933,7 +878,7 @@ id = "<your-kv-namespace-id>"
 - [ ] Create a mock data JSON file matching the expected API response shape (for frontend development before real APIs are connected)
 - [ ] Create `functions/api/data.js` — main GET endpoint
 - [ ] Implement KV cache read logic (try cache first)
-- [ ] Implement `fetchRadarData()` — call Cloudflare Radar API for both domains (time series + current rank + regional)
+- [ ] Implement `fetchRadarData()` — call Cloudflare Radar `domain/{domain}` endpoint for bucket data (twitter.com → top 200, x.com → top 500)
 - [ ] Implement `fetchTrancoData()` — call Tranco API for current rank of both domains
 - [ ] Implement cache-miss fallback (fetch live → save to KV → return)
 - [ ] Add proper error handling (if one source fails, return partial data with error flags)
@@ -958,11 +903,9 @@ id = "<your-kv-namespace-id>"
 - [ ] Create `ChartWrapper.jsx` — Framer Motion scroll-triggered animation wrapper
 - [ ] Create `RebrandAnnotation.jsx` — Recharts `<ReferenceLine>` for July 24, 2023
 - [ ] Implement `filterByRange.js` utility
-- [ ] Create `HeroSection.jsx` — two big rank numbers, animated count-up
-- [ ] Create `DnsChart.jsx` — Recharts LineChart, two lines, inverted Y-axis, time range selector, rebrand annotation
-- [ ] Create `RankingChart.jsx` — Recharts LineChart or BarChart, two series, time range selector
-- [ ] Create `RegionalChart.jsx` — Recharts horizontal BarChart, top 10 countries
-- [ ] Create `VerdictSection.jsx` — computed verdict, shareable design
+- [ ] Create `HeroSection.jsx` — Tranco ranks as big numbers + Radar bucket badges
+- [ ] Create `RankingChart.jsx` — Recharts LineChart, two lines, inverted Y-axis, time range selector, rebrand annotation (primary chart)
+- [ ] Create `VerdictSection.jsx` — computed verdict from Tranco data + Radar bucket context, shareable design
 - [ ] (PLACEHOLDER) `TrendsChart.jsx` — create with placeholder "Coming soon" state, wire up later
 
 ### Phase 6: Deployment (deploy early, iterate live)
@@ -993,6 +936,8 @@ id = "<your-kv-namespace-id>"
 
 ### Phase 9: Nice-to-haves (post-launch)
 - [ ] Add Google Trends integration (Section 3: TrendsChart) using `google-trends-api` npm package or GitHub Actions + pytrends
+- [ ] Add regional breakdown chart when Google Trends (which has per-country data) is available
+- [ ] Add Radar Internet Services ranking chart — "X / Twitter" is ranked #31 among internet services with weekly time series (endpoint: `GET /radar/ranking/internet_services/timeseries_groups?limit=50`)
 - [ ] Animated number count-up in hero section
 - [ ] "Share this" button that copies a pre-formatted tweet
 - [ ] Weekly email digest (Cloudflare Email Workers)

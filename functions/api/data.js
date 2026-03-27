@@ -1,7 +1,39 @@
 const RADAR_BASE = "https://api.cloudflare.com/client/v4/radar/ranking";
 const TRANCO_BASE = "https://tranco-list.eu/api/ranks/domain";
 
-const REGIONAL_COUNTRIES = ["US", "GB", "JP", "BR", "DE", "FR", "IN", "CA", "AU", "TR"];
+const TRANCO_SEED = {
+  twitter: [
+    { date: "2022-09-01", rank: 8 },
+    { date: "2023-01-01", rank: 9 },
+    { date: "2023-04-01", rank: 7 },
+    { date: "2023-07-24", rank: 7 },
+    { date: "2023-10-01", rank: 10 },
+    { date: "2024-01-01", rank: 11 },
+    { date: "2024-03-01", rank: 12 },
+    { date: "2024-04-01", rank: 12 },
+    { date: "2024-06-01", rank: 13 },
+    { date: "2024-07-01", rank: 13 },
+    { date: "2024-10-01", rank: 13 },
+    { date: "2025-01-01", rank: 12 },
+    { date: "2025-04-01", rank: 14 },
+    { date: "2025-07-01", rank: 13 },
+    { date: "2025-10-01", rank: 14 },
+    { date: "2026-01-01", rank: 15 },
+    { date: "2026-03-01", rank: 16 },
+  ],
+  x: [
+    { date: "2024-03-01", rank: 879 },
+    { date: "2024-04-01", rank: 585 },
+    { date: "2024-06-01", rank: 217 },
+    { date: "2024-07-01", rank: 162 },
+    { date: "2025-01-01", rank: 87 },
+    { date: "2025-04-01", rank: 83 },
+    { date: "2025-07-01", rank: 71 },
+    { date: "2025-10-01", rank: 69 },
+    { date: "2026-01-01", rank: 60 },
+    { date: "2026-03-01", rank: 59 },
+  ],
+};
 
 const RESPONSE_HEADERS = {
   "Content-Type": "application/json",
@@ -13,82 +45,46 @@ async function fetchRadarData(env) {
   const token = env.CLOUDFLARE_RADAR_TOKEN;
   const headers = { Authorization: `Bearer ${token}` };
 
-  // Fetch full time series from Sept 2022 to now
-  const seriesUrl =
-    `${RADAR_BASE}/timeseries_groups` +
-    `?domains=twitter.com,x.com&dateStart=2022-09-26&dateEnd=${today()}&limit=500`;
-
-  const [seriesRes, ...regionalRes] = await Promise.all([
-    fetch(seriesUrl, { headers }),
-    ...REGIONAL_COUNTRIES.map((loc) =>
-      fetch(
-        `${RADAR_BASE}/timeseries_groups?domains=twitter.com,x.com&location=${loc}&dateRange=1w`,
-        { headers }
-      )
-    ),
-  ]);
-
-  if (!seriesRes.ok) {
-    throw new Error(`Radar time series failed: ${seriesRes.status} ${seriesRes.statusText}`);
-  }
-
-  const seriesJson = await seriesRes.json();
-  const serie = seriesJson?.result?.serie_0 ?? {};
-  const timestamps = serie.timestamps ?? [];
-  const twitterValues = serie["twitter.com"] ?? [];
-  const xValues = serie["x.com"] ?? [];
-
-  const twitterSeries = timestamps
-    .map((ts, i) => ({ date: ts.slice(0, 10), rank: twitterValues[i] }))
-    .filter((d) => d.rank != null);
-
-  const xSeries = timestamps
-    .map((ts, i) => ({ date: ts.slice(0, 10), rank: xValues[i] }))
-    .filter((d) => d.rank != null);
-
-  // Parse regional data
-  const regional = {};
-  for (let i = 0; i < REGIONAL_COUNTRIES.length; i++) {
-    const country = REGIONAL_COUNTRIES[i];
-    try {
-      if (!regionalRes[i].ok) continue;
-      const rJson = await regionalRes[i].json();
-      const regionalSerie = rJson?.result?.serie_0 ?? {};
-      const rTimestamps = regionalSerie.timestamps ?? [];
-      const lastIdx = rTimestamps.length - 1;
-      if (lastIdx < 0) continue;
-      const twitterRank = (regionalSerie["twitter.com"] ?? [])[lastIdx];
-      const xRank = (regionalSerie["x.com"] ?? [])[lastIdx];
-      if (twitterRank != null && xRank != null) {
-        regional[country] = { twitter_rank: twitterRank, x_rank: xRank };
-      }
-    } catch {
-      // skip country on error
-    }
-  }
-
-  return { twitter: twitterSeries, x: xSeries, regional };
-}
-
-async function fetchTrancoData(env) {
-  // Fetch today's ranks for both domains in parallel
   const [twitterRes, xRes] = await Promise.all([
-    fetch(`${TRANCO_BASE}/twitter.com`),
-    fetch(`${TRANCO_BASE}/x.com`),
+    fetch(`${RADAR_BASE}/domain/twitter.com`, { headers }),
+    fetch(`${RADAR_BASE}/domain/x.com`, { headers }),
   ]);
 
   if (!twitterRes.ok || !xRes.ok) {
-    throw new Error(`Tranco fetch failed: twitter=${twitterRes.status} x=${xRes.status}`);
+    throw new Error(`Radar domain fetch failed: twitter=${twitterRes.status} x=${xRes.status}`);
   }
 
   const [twitterJson, xJson] = await Promise.all([twitterRes.json(), xRes.json()]);
+
+  return {
+    twitter: { bucket: twitterJson?.result?.details_0?.bucket ?? null },
+    x: { bucket: xJson?.result?.details_0?.bucket ?? null },
+  };
+}
+
+async function fetchTrancoData(env) {
+  // Fetch sequentially to avoid 429 rate limiting
+  const twitterRes = await fetch(`${TRANCO_BASE}/twitter.com`);
+  if (!twitterRes.ok) {
+    throw new Error(`Tranco fetch failed: twitter=${twitterRes.status}`);
+  }
+  const twitterJson = await twitterRes.json();
+
+  // Small delay between requests to respect rate limits
+  await new Promise((r) => setTimeout(r, 500));
+
+  const xRes = await fetch(`${TRANCO_BASE}/x.com`);
+  if (!xRes.ok) {
+    throw new Error(`Tranco fetch failed: x=${xRes.status}`);
+  }
+  const xJson = await xRes.json();
 
   // Tranco returns { "domain": "twitter.com", "ranks": [{ "date": "...", "rank": N }, ...] }
   const twitterRanks = twitterJson?.ranks ?? [];
   const xRanks = xJson?.ranks ?? [];
 
-  // Read existing accumulated history from KV
-  const existing = (await env.CACHE.get("tranco_history", "json")) ?? { twitter: [], x: [] };
+  // Read existing accumulated history from KV, falling back to seed data
+  const existing = (await env.CACHE.get("tranco_history", "json")) ?? TRANCO_SEED;
 
   const twitterHistory = mergeHistory(existing.twitter, twitterRanks);
   const xHistory = mergeHistory(existing.x, xRanks);
@@ -110,10 +106,6 @@ function mergeHistory(existing, incoming) {
   return Array.from(map.entries())
     .map(([date, rank]) => ({ date, rank }))
     .sort((a, b) => (a.date < b.date ? -1 : 1));
-}
-
-function today() {
-  return new Date().toISOString().slice(0, 10);
 }
 
 function jsonResponse(data, status = 200) {

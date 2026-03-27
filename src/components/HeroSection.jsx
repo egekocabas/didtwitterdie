@@ -1,8 +1,10 @@
 import { motion } from "framer-motion";
 
-export default function HeroSection({ radar }) {
-  const twitterRank = radar?.twitter?.at(-1)?.rank ?? null;
-  const xRank = radar?.x?.at(-1)?.rank ?? null;
+export default function HeroSection({ radar, tranco }) {
+  const twitterRank = tranco?.twitter?.at(-1)?.rank ?? null;
+  const xRank = tranco?.x?.at(-1)?.rank ?? null;
+  const twitterBucket = radar?.twitter?.bucket ?? null;
+  const xBucket = radar?.x?.bucket ?? null;
 
   return (
     <motion.section
@@ -19,17 +21,27 @@ export default function HeroSection({ radar }) {
         Tracking the slow death (or survival) of Twitter since the rebrand to X on July 24, 2023.
       </p>
       <div className="flex justify-center gap-8 sm:gap-16 flex-wrap">
-        <div className="space-y-1">
+        <div className="space-y-2">
           <p className="text-5xl sm:text-7xl font-bold text-[#1DA1F2]">
             {twitterRank != null ? `#${twitterRank}` : "—"}
           </p>
-          <p className="text-sm text-gray-500 dark:text-gray-400">twitter.com today</p>
+          <p className="text-sm text-gray-500 dark:text-gray-400">twitter.com rank</p>
+          {twitterBucket && (
+            <span className="inline-block text-xs px-2 py-0.5 rounded-full bg-gray-100 dark:bg-gray-800 text-gray-500 dark:text-gray-400">
+              DNS: Top {twitterBucket}
+            </span>
+          )}
         </div>
-        <div className="space-y-1">
+        <div className="space-y-2">
           <p className="text-5xl sm:text-7xl font-bold text-gray-900 dark:text-gray-100">
             {xRank != null ? `#${xRank}` : "—"}
           </p>
-          <p className="text-sm text-gray-500 dark:text-gray-400">x.com today</p>
+          <p className="text-sm text-gray-500 dark:text-gray-400">x.com rank</p>
+          {xBucket && (
+            <span className="inline-block text-xs px-2 py-0.5 rounded-full bg-gray-100 dark:bg-gray-800 text-gray-500 dark:text-gray-400">
+              DNS: Top {xBucket}
+            </span>
+          )}
         </div>
       </div>
     </motion.section>
