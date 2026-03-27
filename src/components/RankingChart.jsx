@@ -45,17 +45,17 @@ export default function RankingChart({ data }) {
       <TimeRangeSelector value={range} onChange={setRange} />
       <ResponsiveContainer width="100%" height={300}>
         <LineChart data={merged} margin={{ top: 8, right: 16, left: 0, bottom: 0 }}>
-          <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
+          <CartesianGrid strokeDasharray="3 3" stroke="var(--chart-grid)" />
           <XAxis
             dataKey="date"
             tickFormatter={formatDate}
-            tick={{ fontSize: 11, fill: "#9ca3af" }}
+            tick={{ fontSize: 11, fill: "var(--tick-color)" }}
             tickLine={false}
             minTickGap={60}
           />
           <YAxis
             reversed
-            tick={{ fontSize: 11, fill: "#9ca3af" }}
+            tick={{ fontSize: 11, fill: "var(--tick-color)" }}
             tickLine={false}
             axisLine={false}
             tickFormatter={(v) => `#${v}`}
@@ -65,8 +65,8 @@ export default function RankingChart({ data }) {
             formatter={(value, name) => [`#${value}`, name]}
             labelFormatter={formatDate}
             contentStyle={{
-              backgroundColor: "var(--tooltip-bg, #fff)",
-              border: "1px solid #e5e7eb",
+              backgroundColor: "var(--tooltip-bg)",
+              border: "1px solid var(--tooltip-border)",
               borderRadius: 8,
               fontSize: 12,
             }}
@@ -87,7 +87,7 @@ export default function RankingChart({ data }) {
           <Line
             type="monotone"
             dataKey="x"
-            stroke="#111827"
+            stroke="var(--chart-x-stroke)"
             strokeWidth={2}
             dot={false}
             activeDot={{ r: 4 }}

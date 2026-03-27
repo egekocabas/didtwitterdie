@@ -71,8 +71,6 @@ async function fetchRadarData(env) {
 }
 
 async function fetchTrancoData(env) {
-  const todayStr = today();
-
   // Fetch today's ranks for both domains in parallel
   const [twitterRes, xRes] = await Promise.all([
     fetch(`${TRANCO_BASE}/twitter.com`),

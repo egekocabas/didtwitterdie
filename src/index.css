@@ -2,6 +2,23 @@
 
 @variant dark (&:where(.dark, .dark *));
 
+/* Chart CSS variables — used by Recharts inline styles which can't use Tailwind */
+:root {
+  --chart-grid: #e5e7eb;
+  --chart-x-stroke: #111827;
+  --tooltip-bg: #ffffff;
+  --tooltip-border: #e5e7eb;
+  --tick-color: #9ca3af;
+}
+
+.dark {
+  --chart-grid: #374151;
+  --chart-x-stroke: #9ca3af;
+  --tooltip-bg: #1f2937;
+  --tooltip-border: #374151;
+  --tick-color: #6b7280;
+}
+
 body {
   margin: 0;
   font-family: Inter, system-ui, -apple-system, sans-serif;

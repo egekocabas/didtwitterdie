@@ -12,7 +12,7 @@ import VerdictSection from "./components/VerdictSection";
 function ErrorState({ message }) {
   return (
     <div className="flex flex-col items-center justify-center min-h-[50vh] space-y-4 text-center">
-      <p className="text-lg font-semibold text-red-500">Failed to load data</p>
+      <p className="text-lg font-semibold text-red-500 dark:text-red-400">Failed to load data</p>
       <p className="text-sm text-gray-500 dark:text-gray-400">{message}</p>
     </div>
   );
