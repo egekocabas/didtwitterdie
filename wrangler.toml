@@ -7,6 +7,9 @@ pages_build_output_dir = "dist"
 binding = "CACHE"
 id = "<your-kv-namespace-id>"
 
-# Uncomment if using a standalone cron Worker (Phase 9):
+# Cron trigger for daily data refresh (post-MVP)
+# MVP approach: relies on KV TTL (24hr) + cache-miss fallback in /api/data.
+# When the 24hr TTL expires, the next visitor triggers a live fetch and re-caches.
+# Uncomment when creating a standalone cron Worker for guaranteed daily refresh:
 # [triggers]
 # crons = ["0 6 * * *"]

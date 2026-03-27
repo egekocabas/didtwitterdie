@@ -122,11 +122,16 @@ function jsonResponse(data, status = 200) {
   return new Response(JSON.stringify(data), { status, headers: RESPONSE_HEADERS });
 }
 
-export async function onRequestGet({ env }) {
-  // 1. Try KV cache first
-  const cached = await env.CACHE.get("all_data", "json");
-  if (cached) {
-    return jsonResponse(cached);
+export async function onRequestGet({ env, request }) {
+  const url = new URL(request.url);
+  const forceRefresh = url.searchParams.get("refresh") === "true";
+
+  // 1. Try KV cache first (skip if ?refresh=true)
+  if (!forceRefresh) {
+    const cached = await env.CACHE.get("all_data", "json");
+    if (cached) {
+      return jsonResponse(cached);
+    }
   }
 
   // 2. Cache miss — fetch live from all sources in parallel
