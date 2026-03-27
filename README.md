@@ -999,3 +999,4 @@ id = "<your-kv-namespace-id>"
 - [ ] Historical "this week in Twitter death" highlights
 - [ ] Compare with other social platforms (Threads, Bluesky, Mastodon)
 - [ ] Embed widget that other sites can use
+- [ ] Migrate `functions/` to [Hono](https://hono.dev) if the API grows beyond 2-3 endpoints — enables routing, middleware, and typed OpenAPI client generation
