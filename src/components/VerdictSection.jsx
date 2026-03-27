@@ -59,6 +59,12 @@ export default function VerdictSection({ data }) {
             Cloudflare Radar DNS: twitter.com is in the Top {twitterBucket}, x.com only Top {xBucket}
           </p>
         )}
+        <p className="text-xs text-gray-400 dark:text-gray-500 italic border-t border-gray-100 dark:border-gray-700 pt-4 mt-2">
+          Ranks are based on aggregated DNS and web traffic signals from the Tranco List (Cloudflare
+          DNS, Cisco Umbrella, Chrome UX, Majestic, Farsight). Note that twitter.com redirects to
+          x.com, so traffic to both domains may partially overlap. &ldquo;% alive&rdquo; is a
+          relative comparison, not a scientific metric.
+        </p>
       </div>
     </ChartWrapper>
   );
