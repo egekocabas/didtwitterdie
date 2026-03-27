@@ -63,7 +63,7 @@ The core concept: compare `twitter.com` vs `x.com` across multiple metrics (DNS 
 │  Cloudflare Radar API              Tranco List   │
 │  (free, API token)                 (free, no key)│
 │                                                  │
-│  [Google Trends — deferred to Phase 9]           │
+│  [Google Trends — embedded widget, no backend]   │
 └──────────┬─────────────────────────────┬─────────┘
            │                             │
            ▼                             ▼
@@ -129,25 +129,19 @@ Response: { "result": { "details_0": { "bucket": "200", "rank": null } } }
 
 ### 2. Google Trends (search interest)
 
-- **What it measures**: How often people search for "twitter" vs "x.com" vs "x social media" on Google
-- **Why it matters**: Measures brand recognition — which name lives in people's heads
-- **Historical data**: Goes back to 2004, but we only need from ~2022
-- **Granularity**: Weekly for ranges under 5 years, monthly for longer
+- **What it measures**: How often people search for "twitter" vs "x.com" on Google
+- **Why it matters**: Measures brand recognition in search — different from DNS/domain data which measures direct URL usage
+- **Granularity**: Weekly data points
 - **Data format**: Relative interest score 0-100 (not absolute numbers)
+- **Integration**: Embedded widget via Google's official embed feature — no scraping, no API key
 
-**Important implementation note**: There is no official Google Trends API. `pytrends` is a popular Python library but won't run in Cloudflare Workers (which is JavaScript). Options:
+**Why embed instead of API**: There is no official Google Trends API. Unofficial widget endpoints require session cookies and aggressively rate-limit (429 on rapid requests). Testing confirmed all X-related search terms ("x.com", "x twitter", "x social media") have near-zero interest (0-3) compared to "twitter" (~32-80). The embed approach is reliable, always up-to-date, and officially supported.
 
-1. **Use `google-trends-api` npm package** — a JS library that scrapes Google Trends widget endpoints. Free, no API key needed, works in Node.js. May break if Google changes their internal endpoints.
-2. **Use the Google Trends embed/widget URL** and parse the JSON response directly — this is what most libraries do under the hood. The URL pattern is `https://trends.google.com/trends/api/widgetdata/multiline?...`
-3. **Pre-fetch with a GitHub Actions cron** — a Python script using `pytrends` runs on GitHub Actions schedule (free), writes results to a JSON file in R2 or a public gist, and the Cloudflare Worker reads that.
+**Keywords compared**: `"twitter"` vs `"x.com"`
 
-**Recommended approach for MVP**: Start WITHOUT Google Trends. Launch with Cloudflare Radar + Tranco first (both have clean, reliable, documented APIs). Add Google Trends as a second iteration — it's the most fragile data source since it relies on unofficial scraping. This simplifies the initial build significantly.
+**Timeframe**: 2022 to present (covers full before/after rebrand period)
 
-**When adding Google Trends later**, option 1 (`google-trends-api` npm package) is simplest. Option 3 (GitHub Actions) is most reliable long-term.
-
-**Keywords to compare**: `"twitter"`, `"x.com"`, `"x social media"`
-
-**Timeframe**: `"2022-01-01 {today}"` to cover the full before/after rebrand period
+**Future**: Applied for Google Trends API alpha program. If accepted, will migrate from embed to a custom Recharts AreaChart with raw data for verdict calculation.
 
 ### 3. Tranco List (aggregated domain ranking)
 
@@ -363,15 +357,12 @@ Each section receives only its slice of data as props:
 - **Story**: "Domain popularity over time — the consensus of 5 data sources"
 - **Note**: Historical data from 2022 is pre-seeded from verified Tranco list downloads. New daily data is appended on each cache miss.
 
-### Section 3: Search interest — what people Google (DEFERRED — Phase 9)
+### Section 3: Search interest — what people Google
 
-> **MVP note**: This section is deferred to post-launch. For MVP, show a "Coming soon" placeholder. Google Trends has no official API, and unofficial scraping is fragile.
-
-- **Data source**: Google Trends
-- **API data used**: `data.trends.data[]` — array of `{ date, twitter, x_com, x_social }` where each value is 0-100
-- **Chart type**: **Area chart** (Recharts `<AreaChart>`)
-- **Keywords compared**: "twitter" (blue), "x.com" (amber/orange), "x social media" (gray)
-- **Story**: "Do people still search 'twitter' or have they switched to 'x'?"
+- **Data source**: Google Trends (embedded widget)
+- **Chart type**: Google's own interactive chart embedded via official iframe embed
+- **Keywords compared**: "twitter" vs "x.com"
+- **Story**: "Do people still search 'twitter'?" — Yes, overwhelmingly. Nobody Googles "x.com".
 
 ### Section 4: The verdict
 
@@ -467,16 +458,7 @@ The single `/api/data` endpoint returns this JSON structure:
 }
 ```
 
-**Note**: `trends` is `null` for the MVP. When Google Trends is added in Phase 9, it will contain:
-```json
-{
-  "keywords": ["twitter", "x.com", "x social media"],
-  "data": [
-    { "date": "2022-01-02", "twitter": 85, "x_com": 2, "x_social": 1 }
-  ]
-}
-```
-Frontend components should handle `data.trends === null` gracefully (show "Coming soon" placeholder).
+**Note**: `trends` is `null` in the API response — Google Trends is displayed via an embedded iframe in the frontend, not fetched by the backend. `data.trends === null` is the permanent state for this field.
 
 ---
 
@@ -885,7 +867,7 @@ id = "<your-kv-namespace-id>"
 - [ ] Implement cache-miss fallback (fetch live → save to KV → return)
 - [ ] Add proper error handling (if one source fails, return partial data with error flags)
 - [ ] Set `Cache-Control` response headers
-- [ ] (DEFER) Google Trends — skip for MVP, add in Phase 9. Launch with Cloudflare Radar + Tranco first.
+- [x] Google Trends — implemented via embedded widget (Phase 5.5). No backend integration needed.
 
 ### Phase 3: Backend — Cron / Cache Refresh
 - [ ] For MVP: rely on KV TTL expiration (24hr) + cache-miss fallback in API route — no separate cron needed
@@ -937,7 +919,8 @@ id = "<your-kv-namespace-id>"
 - [ ] Favicon
 
 ### Phase 9: Nice-to-haves (post-launch)
-- [ ] Add Google Trends integration (Section 3: TrendsChart) using `google-trends-api` npm package or GitHub Actions + pytrends
+- [x] Add Google Trends integration — implemented as embedded widget (Phase 5.5)
+- [ ] Migrate Google Trends from embed to API-backed Recharts chart if Google Trends API alpha access is granted
 - [ ] Add regional breakdown chart when Google Trends (which has per-country data) is available
 - [ ] Add Radar Internet Services ranking chart — "X / Twitter" is ranked #31 among internet services with weekly time series (endpoint: `GET /radar/ranking/internet_services/timeseries_groups?limit=50`)
 - [ ] Animated number count-up in hero section

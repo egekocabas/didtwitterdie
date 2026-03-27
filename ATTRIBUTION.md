@@ -31,3 +31,13 @@ MIT License — see [LICENSE](LICENSE) file.
   | Farsight passive DNS | No formal license |
 
 - **Commercial use**: The CC BY-NC 4.0 restriction from Cloudflare Radar applies transitively to Tranco's aggregated data (since Radar data is one of its five input sources).
+
+---
+
+## Google Trends Data
+
+- **Source**: [Google Trends](https://trends.google.com)
+- **Integration**: Embedded widget via Google's official embed feature — no API scraping
+- **Data**: Relative search interest (0–100 scale), not absolute search volume
+- **Trademark**: "Google" and "Google Trends" are trademarks of Google LLC. Used here as descriptive references only, without implying endorsement or affiliation.
+- **Terms**: Google Trends data is subject to [Google's Terms of Service](https://policies.google.com/terms)
