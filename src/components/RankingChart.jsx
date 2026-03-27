@@ -40,8 +40,9 @@ export default function RankingChart({ data }) {
   return (
     <ChartWrapper
       title="Domain popularity over time"
-      description="Combined ranking from Cloudflare DNS, Cisco Umbrella, Chrome UX, Majestic, and Farsight passive DNS via the Tranco List. Lower rank = more popular."
+      description="Combined ranking from Cloudflare DNS, Cisco Umbrella, Chrome UX, Majestic, and Farsight passive DNS via the Tranco List."
     >
+      <p className="text-xs text-gray-400 dark:text-gray-500">Lower rank = more popular.</p>
       <TimeRangeSelector value={range} onChange={setRange} />
       <ResponsiveContainer width="100%" height={300}>
         <LineChart data={merged} margin={{ top: 8, right: 16, left: 0, bottom: 0 }}>
