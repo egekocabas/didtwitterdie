@@ -155,6 +155,8 @@ Response: { "result": { "details_0": { "bucket": "200", "rank": null } } }
 - **Why it matters**: The "consensus vote" — if 5 different measurement methods all agree, that's a strong signal
 - **API**: Free REST API + Python library
 - **Historical data**: Past versions of lists can be downloaded; API gives current + 30 days back
+- **Citation**: Le Pochat et al., "Tranco: A Research-Oriented Top Sites Ranking Hardened Against Manipulation", NDSS 2019. DOI: [10.14722/ndss.2019.23386](https://doi.org/10.14722/ndss.2019.23386)
+- **License**: No explicit license published. Aggregates CC-licensed data — see [ATTRIBUTION.md](ATTRIBUTION.md) for full details.
 
 **Key endpoints**:
 

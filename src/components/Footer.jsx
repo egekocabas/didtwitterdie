@@ -29,9 +29,30 @@ export default function Footer({ updatedAt }) {
           className="underline hover:text-gray-700 dark:hover:text-gray-300"
         >
           Tranco List
+        </a>{" "}
+        (
+        <a
+          href="https://doi.org/10.14722/ndss.2019.23386"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="underline hover:text-gray-700 dark:hover:text-gray-300"
+        >
+          Le Pochat et al., NDSS 2019
+        </a>
+        )
+      </p>
+      <p>
+        Cloudflare Radar data licensed under{" "}
+        <a
+          href="https://creativecommons.org/licenses/by-nc/4.0/"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="underline hover:text-gray-700 dark:hover:text-gray-300"
+        >
+          CC BY-NC 4.0
         </a>
       </p>
-      <p>Cloudflare Radar data licensed under CC BY-NC 4.0</p>
+      <p>Cloudflare and Cloudflare Radar are trademarks of Cloudflare, Inc.</p>
       {formatted && <p>Last updated: {formatted}</p>}
     </footer>
   );
