@@ -63,7 +63,9 @@ export default function VerdictSection({ data }) {
           Ranks are based on aggregated DNS and web traffic signals from the Tranco List (Cloudflare
           DNS, Cisco Umbrella, Chrome UX, Majestic, Farsight). Note that twitter.com redirects to
           x.com, so traffic to both domains may partially overlap. &ldquo;% alive&rdquo; is a
-          relative comparison, not a scientific metric.
+          relative comparison, not a scientific metric. Google Trends is shown as an embedded
+          chart only and not factored into this verdict — search interest for &ldquo;x&rdquo; and
+          &ldquo;x.com&rdquo; is too generic to isolate reliably, and API access is pending.
         </p>
       </div>
     </ChartWrapper>
