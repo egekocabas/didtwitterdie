@@ -8,6 +8,7 @@ const TRENDS_EMBED_URL =
       comparisonItem: [
         { keyword: "twitter", geo: "", time: "2022-01-01 2026-12-31" },
         { keyword: "x.com", geo: "", time: "2022-01-01 2026-12-31" },
+        { keyword: "x", geo: "", time: "2022-01-01 2026-12-31" },
       ],
       category: 0,
       property: "",
@@ -19,7 +20,7 @@ export default function TrendsChart() {
   return (
     <ChartWrapper
       title="What people Google"
-      description='Google search interest for "twitter" vs "x.com" over time. Values are relative (0–100), not absolute search volume.'
+      description='Google search interest for "twitter", "x.com", and "x" over time. Values are relative (0–100), not absolute search volume.'
     >
       <div className="rounded-xl overflow-hidden border border-gray-200 dark:border-gray-700 bg-white">
         <iframe
@@ -28,7 +29,7 @@ export default function TrendsChart() {
           height="460"
           frameBorder="0"
           loading="lazy"
-          title="Google Trends: twitter vs x.com"
+          title="Google Trends: twitter vs x.com vs x"
         />
       </div>
       <p className="text-xs text-gray-400 dark:text-gray-500 mt-2 text-center">
