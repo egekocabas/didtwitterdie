@@ -22,7 +22,7 @@ export default function TrendsChart() {
       title="What people Google"
       description='Google search interest for "twitter", "x.com", and "x" over time. Values are relative (0–100), not absolute search volume.'
     >
-      <div className="rounded-xl overflow-hidden border border-gray-200 dark:border-gray-700 bg-white">
+      <div className="rounded-xl overflow-hidden border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900">
         <iframe
           src={TRENDS_EMBED_URL}
           width="100%"
@@ -30,6 +30,7 @@ export default function TrendsChart() {
           frameBorder="0"
           loading="lazy"
           title="Google Trends: twitter vs x.com vs x"
+          className="dark:[filter:invert(1)_hue-rotate(180deg)]"
         />
       </div>
       <p className="text-xs text-gray-400 dark:text-gray-500 mt-2 text-center">
