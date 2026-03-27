@@ -1,0 +1,4 @@
+# Copy this to .dev.vars and fill in your values
+# DO NOT commit .dev.vars to git
+
+CLOUDFLARE_RADAR_TOKEN=your-cloudflare-api-token-here

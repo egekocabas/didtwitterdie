@@ -1,0 +1,12 @@
+name = "didtwitterdie"
+compatibility_date = "2024-01-01"
+compatibility_flags = ["nodejs_compat"]
+pages_build_output_dir = "dist"
+
+[[kv_namespaces]]
+binding = "CACHE"
+id = "<your-kv-namespace-id>"
+
+# Uncomment if using a standalone cron Worker (Phase 9):
+# [triggers]
+# crons = ["0 6 * * *"]
