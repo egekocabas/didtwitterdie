@@ -1,5 +1,7 @@
 # didtwitterdie.com
 
+<img src="public/icon.svg" alt="didtwitterdie icon" width="80" />
+
 > Did Twitter die when it rebranded to X?
 
 A single-page data dashboard comparing the popularity of `twitter.com` vs `x.com` since the July 2023 rebrand — using real data from Tranco domain rankings, Cloudflare Radar DNS, and Google Trends search interest.
