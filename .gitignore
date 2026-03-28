@@ -14,6 +14,10 @@ dist-ssr
 .dev.vars
 .wrangler/
 
+# Internal dev artifacts
+.tasks/
+.claude/
+
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json

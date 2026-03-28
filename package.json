@@ -1,7 +1,14 @@
 {
   "name": "didtwitterdie",
+  "description": "A data dashboard tracking the popularity of twitter.com vs x.com since the July 2023 rebrand",
+  "version": "1.0.0",
+  "author": "Ege Kocabas",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/egekocabas/didtwitterdie"
+  },
   "private": true,
-  "version": "0.0.0",
   "type": "module",
   "scripts": {
     "dev": "vite",

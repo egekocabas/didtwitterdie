@@ -19,8 +19,7 @@ export function useData(): UseDataResult {
         return res.json() as Promise<ApiResponse>;
       })
       .then((d) => setData(d))
-      .catch((err: Error) => {
-        console.warn("API fetch failed, falling back to mock data:", err.message);
+      .catch(() => {
         return import("../utils/mockData.json").then((mod) =>
           setData(mod.default as ApiResponse)
         );
