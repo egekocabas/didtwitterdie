@@ -11,7 +11,10 @@ export default function Layout({ children }) {
 
   useEffect(() => {
     document.documentElement.classList.toggle("dark", dark);
+    document.documentElement.style.colorScheme = dark ? "dark" : "light";
+    document.documentElement.style.backgroundColor = dark ? "#030712" : "#ffffff";
     localStorage.setItem("theme", dark ? "dark" : "light");
+    document.querySelector('meta[name="theme-color"]').content = dark ? "#030712" : "#ffffff";
   }, [dark]);
 
   return (

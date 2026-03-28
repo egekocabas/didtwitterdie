@@ -11,6 +11,14 @@
   --tick-color: #9ca3af;
 }
 
+:root {
+  color-scheme: light;
+}
+
+:root.dark {
+  color-scheme: dark;
+}
+
 .dark {
   --chart-grid: #374151;
   --chart-x-stroke: #9ca3af;

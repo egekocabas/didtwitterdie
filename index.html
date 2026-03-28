@@ -4,6 +4,20 @@
     <meta charset="UTF-8" />
     <link rel="icon" type="image/x-icon" href="/favicon.ico" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="color-scheme" content="light dark" />
+    <meta name="theme-color" content="#ffffff" />
+    <script>
+      (function () {
+        var saved = localStorage.getItem("theme");
+        var prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
+        var isDark = saved === "dark" || (!saved && prefersDark);
+        if (isDark) {
+          document.documentElement.classList.add("dark");
+          document.documentElement.style.backgroundColor = "#030712";
+          document.querySelector('meta[name="theme-color"]').content = "#030712";
+        }
+      })();
+    </script>
     <title>Did Twitter Die?</title>
     <meta name="description" content="Real data comparing twitter.com vs x.com popularity — DNS queries, search interest, and domain rankings since the July 2023 rebrand." />
 
