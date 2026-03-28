@@ -1,1 +1,1 @@
-See README.md.
+See DEVELOPMENT.md.

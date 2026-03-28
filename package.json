@@ -5,6 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
+    "dev:mobile": "npm run dev -- --host",
     "dev:full": "npm run build && wrangler pages dev dist",
     "build": "vite build",
     "lint": "eslint .",
