@@ -14,6 +14,7 @@ export default function HeroSection({ radar, tranco }) {
       transition={{ duration: 0.5 }}
       className="text-center space-y-6 py-12"
     >
+      <img src="/icon.svg" alt="" width="100" height="100" className="mx-auto" />
       <h1 className="text-4xl sm:text-6xl font-bold tracking-tight">
         Did Twitter Die?
       </h1>

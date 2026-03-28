@@ -1,0 +1,51 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 400" width="340" height="340">
+  <defs>
+    <linearGradient id="bd4" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#C41E3A"/>
+      <stop offset="100%" stop-color="#7A1024" stop-opacity="0.8"/>
+    </linearGradient>
+  </defs>
+
+  <g transform="translate(200,200) rotate(180) translate(-65,-55)">
+    <ellipse cx="68" cy="38" rx="42" ry="28" fill="#4A99E9" opacity="0.93"/>
+    <circle cx="112" cy="28" r="20" fill="#4A99E9" opacity="0.93"/>
+    <path d="M 128,22 L 144,28 L 128,32 Z" fill="#3878BE" opacity="0.85"/>
+    <line x1="128" y1="27" x2="142" y2="28" stroke="#2C5A8E" stroke-width="0.8" stroke-linecap="round" opacity="0.7"/>
+    <path d="M 50,28 C 40,18 20,4 2,0 C 8,8 18,18 30,24 C 22,20 10,10 -4,2 C 6,14 20,26 36,30 C 42,32 48,32 50,28 Z" fill="#3A7DC8" opacity="0.7"/>
+    <path d="M 28,44 C 18,52 6,64 -2,76 C 4,68 12,56 22,48" fill="none" stroke="#4A99E9" stroke-width="4" stroke-linecap="round" opacity="0.8"/>
+    <path d="M 32,48 C 26,58 18,72 14,82 C 18,72 24,60 32,50" fill="none" stroke="#4A99E9" stroke-width="3.5" stroke-linecap="round" opacity="0.65"/>
+    <path d="M 24,46 C 12,56 0,68 -8,80 C -2,70 8,56 20,46" fill="none" stroke="#3A7DC8" stroke-width="3" stroke-linecap="round" opacity="0.5"/>
+    <circle cx="118" cy="24" r="6" fill="#0D0D0F" opacity="0.9"/>
+    <line x1="115" y1="21" x2="121" y2="27" stroke="#8AB8E8" stroke-width="2" stroke-linecap="round"/>
+    <line x1="121" y1="21" x2="115" y2="27" stroke="#8AB8E8" stroke-width="2" stroke-linecap="round"/>
+  </g>
+
+  <!-- Wound -->
+  <ellipse cx="205" cy="219" rx="7" ry="5" fill="#7A1024" opacity="0.9"/>
+  <ellipse cx="205" cy="219" rx="5" ry="3.5" fill="#9B1B30" opacity="0.9"/>
+  <ellipse cx="204" cy="218" rx="2.5" ry="1.8" fill="#C41E3A" opacity="0.8"/>
+
+  <!-- Main drip -->
+  <path d="M 205,224 Q 207,240 209,258 Q 210,268 208,278" fill="none" stroke="url(#bd4)" stroke-width="2.8" stroke-linecap="round"/>
+
+  <!-- Teardrop 1 — large -->
+  <path d="M 208,278 Q 208,282 205,288 Q 202,294 205,298 Q 210,302 213,296 Q 216,290 212,284 Q 210,280 208,278 Z" fill="#9B1B30" opacity="0.9"/>
+  <ellipse cx="207" cy="292" rx="1.5" ry="2" fill="#C41E3A" opacity="0.35"/>
+
+  <!-- Teardrop 2 — medium -->
+  <path d="M 214,248 Q 214,251 212,255 Q 210,259 212,261 Q 215,263 217,259 Q 219,255 216,251 Q 215,249 214,248 Z" fill="#9B1B30" opacity="0.75"/>
+
+  <!-- Teardrop 3 — small -->
+  <path d="M 200,266 Q 200,268 199,271 Q 197.5,274 199,275.5 Q 201,277 202.5,274 Q 204,271 202,268 Q 201,267 200,266 Z" fill="#9B1B30" opacity="0.55"/>
+
+  <!-- Secondary streak -->
+  <path d="M 202,222 Q 199,234 198,248" fill="none" stroke="#9B1B30" stroke-width="1.2" stroke-linecap="round" opacity="0.5"/>
+
+  <!-- Tiny satellite drop -->
+  <path d="M 198,248 Q 197.5,250 197,253 Q 196,255.5 197.5,256.5 Q 199,257 200,255 Q 200.5,253 199,250.5 Q 198.5,249 198,248 Z" fill="#9B1B30" opacity="0.4"/>
+
+  <!-- Micro splatter near wound -->
+  <circle cx="213" cy="224" r="1.2" fill="#9B1B30" opacity="0.45"/>
+  <circle cx="198" cy="226" r="0.9" fill="#9B1B30" opacity="0.35"/>
+  <circle cx="211" cy="230" r="0.7" fill="#9B1B30" opacity="0.3"/>
+</svg>
