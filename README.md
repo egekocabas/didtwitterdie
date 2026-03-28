@@ -30,3 +30,7 @@ See [DEVELOPMENT.md](DEVELOPMENT.md) for full architecture, data source details,
 ## License & Attribution
 
 See [ATTRIBUTION.md](ATTRIBUTION.md) for data source licenses and trademark notices.
+
+## Disclaimer
+
+This project was developed with the assistance of [Claude](https://claude.ai) (Anthropic) and [ChatGPT](https://chatgpt.com) (OpenAI), including code generation, architecture decisions, and logo creation.
