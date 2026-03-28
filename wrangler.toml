@@ -5,7 +5,7 @@ pages_build_output_dir = "dist"
 
 [[kv_namespaces]]
 binding = "CACHE"
-id = "<your-kv-namespace-id>"
+id = "12d1ca23268245769547ba7b0ea1eedf"
 
 # Cron trigger for daily data refresh (post-MVP)
 # MVP approach: relies on KV TTL (24hr) + cache-miss fallback in /api/data.
