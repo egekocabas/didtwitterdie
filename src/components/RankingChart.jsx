@@ -55,12 +55,11 @@ export default function RankingChart({ data }) {
             minTickGap={60}
           />
           <YAxis
-            reversed
             tick={{ fontSize: 11, fill: "var(--tick-color)" }}
             tickLine={false}
             axisLine={false}
             tickFormatter={(v) => `#${v}`}
-            width={36}
+            width={48}
           />
           <Tooltip
             formatter={(value, name) => [`#${value}`, name]}
