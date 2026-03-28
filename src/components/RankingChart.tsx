@@ -13,9 +13,16 @@ import ChartWrapper from "./ChartWrapper";
 import TimeRangeSelector from "./TimeRangeSelector";
 import RebrandAnnotation from "./RebrandAnnotation";
 import { filterByRange } from "../utils/filterByRange";
+import type { TrancoData, TimeRange } from "../types";
 
-function mergeByDate(twitter, x) {
-  const map = new Map();
+interface MergedRankEntry {
+  date: string;
+  twitter?: number;
+  x?: number;
+}
+
+function mergeByDate(twitter: { date: string; rank: number }[], x: { date: string; rank: number }[]): MergedRankEntry[] {
+  const map = new Map<string, MergedRankEntry>();
   for (const d of twitter) map.set(d.date, { date: d.date, twitter: d.rank });
   for (const d of x) {
     const entry = map.get(d.date) ?? { date: d.date };
@@ -25,13 +32,17 @@ function mergeByDate(twitter, x) {
   return Array.from(map.values()).sort((a, b) => (a.date < b.date ? -1 : 1));
 }
 
-function formatDate(dateStr) {
+function formatDate(dateStr: string): string {
   const d = new Date(dateStr);
   return d.toLocaleDateString("en-US", { month: "short", year: "numeric" });
 }
 
-export default function RankingChart({ data }) {
-  const [range, setRange] = useState("ALL");
+interface RankingChartProps {
+  data: TrancoData | null;
+}
+
+export default function RankingChart({ data }: RankingChartProps) {
+  const [range, setRange] = useState<TimeRange>("ALL");
 
   const twitterFiltered = filterByRange(data?.twitter ?? [], range);
   const xFiltered = filterByRange(data?.x ?? [], range);
@@ -58,12 +69,12 @@ export default function RankingChart({ data }) {
             tick={{ fontSize: 11, fill: "var(--tick-color)" }}
             tickLine={false}
             axisLine={false}
-            tickFormatter={(v) => `#${v}`}
+            tickFormatter={(v: number) => `#${v}`}
             width={48}
           />
           <Tooltip
-            formatter={(value, name) => [`#${value}`, name]}
-            labelFormatter={formatDate}
+            formatter={(value) => [`#${value}`, ""]}
+            labelFormatter={(label) => formatDate(String(label))}
             contentStyle={{
               backgroundColor: "var(--tooltip-bg)",
               border: "1px solid var(--tooltip-border)",
@@ -73,7 +84,7 @@ export default function RankingChart({ data }) {
           />
           <Legend
             wrapperStyle={{ fontSize: 12, paddingTop: 8 }}
-            formatter={(value) => (value === "twitter" ? "twitter.com" : "x.com")}
+            formatter={(value: string) => (value === "twitter" ? "twitter.com" : "x.com")}
           />
           <RebrandAnnotation />
           <Line

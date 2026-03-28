@@ -1,6 +1,13 @@
-const RANGES = ["1M", "6M", "1Y", "3Y", "ALL"];
+import type { TimeRange } from "../types";
 
-export default function TimeRangeSelector({ value, onChange }) {
+const RANGES: TimeRange[] = ["1M", "6M", "1Y", "3Y", "ALL"];
+
+interface TimeRangeSelectorProps {
+  value: TimeRange;
+  onChange: (range: TimeRange) => void;
+}
+
+export default function TimeRangeSelector({ value, onChange }: TimeRangeSelectorProps) {
   return (
     <div className="flex flex-wrap gap-1">
       {RANGES.map((range) => (

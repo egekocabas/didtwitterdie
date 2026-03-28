@@ -1,4 +1,6 @@
-const CUTOFFS_DAYS = {
+import type { RankEntry, TimeRange } from "../types";
+
+const CUTOFFS_DAYS: Record<TimeRange, number> = {
   "1M": 30,
   "6M": 180,
   "1Y": 365,
@@ -6,7 +8,7 @@ const CUTOFFS_DAYS = {
   "ALL": Infinity,
 };
 
-export function filterByRange(data, range) {
+export function filterByRange(data: RankEntry[], range: TimeRange): RankEntry[] {
   const days = CUTOFFS_DAYS[range] ?? Infinity;
   if (days === Infinity) return data;
   const cutoff = new Date(Date.now() - days * 86400000);

@@ -1,6 +1,12 @@
 import { motion } from "framer-motion";
 
-export default function ChartWrapper({ title, description, children }) {
+interface ChartWrapperProps {
+  title?: string;
+  description?: string;
+  children: React.ReactNode;
+}
+
+export default function ChartWrapper({ title, description, children }: ChartWrapperProps) {
   return (
     <motion.section
       initial={{ opacity: 0, y: 30 }}

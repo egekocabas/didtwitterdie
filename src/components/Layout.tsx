@@ -1,20 +1,25 @@
 import { useState, useEffect } from "react";
 
-function getInitialDark() {
+function getInitialDark(): boolean {
   const stored = localStorage.getItem("theme");
   if (stored) return stored === "dark";
   return window.matchMedia("(prefers-color-scheme: dark)").matches;
 }
 
-export default function Layout({ children }) {
-  const [dark, setDark] = useState(getInitialDark);
+interface LayoutProps {
+  children: React.ReactNode;
+}
+
+export default function Layout({ children }: LayoutProps) {
+  const [dark, setDark] = useState<boolean>(getInitialDark);
 
   useEffect(() => {
     document.documentElement.classList.toggle("dark", dark);
     document.documentElement.style.colorScheme = dark ? "dark" : "light";
     document.documentElement.style.backgroundColor = dark ? "#030712" : "#ffffff";
     localStorage.setItem("theme", dark ? "dark" : "light");
-    document.querySelector('meta[name="theme-color"]').content = dark ? "#030712" : "#ffffff";
+    const themeMeta = document.querySelector<HTMLMetaElement>('meta[name="theme-color"]');
+    if (themeMeta) themeMeta.content = dark ? "#030712" : "#ffffff";
   }, [dark]);
 
   return (

@@ -1,6 +1,12 @@
 import { motion } from "framer-motion";
+import type { RadarData, TrancoData } from "../types";
 
-export default function HeroSection({ radar, tranco }) {
+interface HeroSectionProps {
+  radar: RadarData | null;
+  tranco: TrancoData | null;
+}
+
+export default function HeroSection({ radar, tranco }: HeroSectionProps) {
   const twitterRank = tranco?.twitter?.at(-1)?.rank ?? null;
   const xRank = tranco?.x?.at(-1)?.rank ?? null;
   const twitterBucket = radar?.twitter?.bucket ?? null;

@@ -1,4 +1,8 @@
-function SkeletonBlock({ className }) {
+interface SkeletonBlockProps {
+  className: string;
+}
+
+function SkeletonBlock({ className }: SkeletonBlockProps) {
   return <div className={`animate-pulse rounded-lg bg-gray-200 dark:bg-gray-800 ${className}`} />;
 }
 

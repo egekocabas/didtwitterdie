@@ -1,4 +1,8 @@
-export default function Footer({ updatedAt }) {
+interface FooterProps {
+  updatedAt?: number | null;
+}
+
+export default function Footer({ updatedAt }: FooterProps) {
   const formatted = updatedAt
     ? new Date(updatedAt).toLocaleDateString("en-US", {
         year: "numeric",

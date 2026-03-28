@@ -1,14 +1,22 @@
 import ChartWrapper from "./ChartWrapper";
+import type { ApiResponse } from "../types";
 
-function computeVerdict(data) {
+interface Verdict {
+  twitterRank: number;
+  xRank: number;
+  twitterWins: boolean;
+  alivePercent: number;
+  twitterBucket: string | null;
+  xBucket: string | null;
+}
+
+function computeVerdict(data: ApiResponse): Verdict | null {
   const twitterRank = data?.tranco?.twitter?.at(-1)?.rank ?? null;
   const xRank = data?.tranco?.x?.at(-1)?.rank ?? null;
 
   if (twitterRank == null || xRank == null) return null;
 
   const twitterWins = twitterRank < xRank;
-
-  // Percentage-alive: how much better twitter.com ranks vs x.com
   const alivePercent = Math.round((1 - twitterRank / (twitterRank + xRank)) * 100);
 
   const twitterBucket = data?.radar?.twitter?.bucket ?? null;
@@ -17,7 +25,11 @@ function computeVerdict(data) {
   return { twitterRank, xRank, twitterWins, alivePercent, twitterBucket, xBucket };
 }
 
-export default function VerdictSection({ data }) {
+interface VerdictSectionProps {
+  data: ApiResponse;
+}
+
+export default function VerdictSection({ data }: VerdictSectionProps) {
   const verdict = computeVerdict(data);
 
   if (!verdict) {

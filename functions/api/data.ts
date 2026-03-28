@@ -1,7 +1,10 @@
+import type { Env } from "../types";
+import type { RankEntry, RadarData, TrancoData, ApiResponse } from "../../src/types";
+
 const RADAR_BASE = "https://api.cloudflare.com/client/v4/radar/ranking";
 const TRANCO_BASE = "https://tranco-list.eu/api/ranks/domain";
 
-const TRANCO_SEED = {
+const TRANCO_SEED: TrancoData = {
   twitter: [
     { date: "2022-09-01", rank: 8 },
     { date: "2023-01-01", rank: 9 },
@@ -35,13 +38,13 @@ const TRANCO_SEED = {
   ],
 };
 
-const RESPONSE_HEADERS = {
+const RESPONSE_HEADERS: Record<string, string> = {
   "Content-Type": "application/json",
   "Access-Control-Allow-Origin": "*",
   "Cache-Control": "public, max-age=3600",
 };
 
-async function fetchRadarData(env) {
+async function fetchRadarData(env: Env): Promise<RadarData> {
   const token = env.CLOUDFLARE_RADAR_TOKEN;
   const headers = { Authorization: `Bearer ${token}` };
 
@@ -54,21 +57,29 @@ async function fetchRadarData(env) {
     throw new Error(`Radar domain fetch failed: twitter=${twitterRes.status} x=${xRes.status}`);
   }
 
-  const [twitterJson, xJson] = await Promise.all([twitterRes.json(), xRes.json()]);
+  const [twitterJson, xJson] = await Promise.all([
+    twitterRes.json() as Promise<Record<string, unknown>>,
+    xRes.json() as Promise<Record<string, unknown>>,
+  ]);
+
+  const twitterResult = twitterJson?.result as Record<string, unknown> | undefined;
+  const xResult = xJson?.result as Record<string, unknown> | undefined;
+  const twitterDetails = twitterResult?.details_0 as Record<string, unknown> | undefined;
+  const xDetails = xResult?.details_0 as Record<string, unknown> | undefined;
 
   return {
-    twitter: { bucket: twitterJson?.result?.details_0?.bucket ?? null },
-    x: { bucket: xJson?.result?.details_0?.bucket ?? null },
+    twitter: { bucket: (twitterDetails?.bucket as string) ?? null },
+    x: { bucket: (xDetails?.bucket as string) ?? null },
   };
 }
 
-async function fetchTrancoData(env) {
+async function fetchTrancoData(env: Env): Promise<TrancoData> {
   // Fetch sequentially to avoid 429 rate limiting
   const twitterRes = await fetch(`${TRANCO_BASE}/twitter.com`);
   if (!twitterRes.ok) {
     throw new Error(`Tranco fetch failed: twitter=${twitterRes.status}`);
   }
-  const twitterJson = await twitterRes.json();
+  const twitterJson = await twitterRes.json() as Record<string, unknown>;
 
   // Small delay between requests to respect rate limits
   await new Promise((r) => setTimeout(r, 500));
@@ -77,14 +88,14 @@ async function fetchTrancoData(env) {
   if (!xRes.ok) {
     throw new Error(`Tranco fetch failed: x=${xRes.status}`);
   }
-  const xJson = await xRes.json();
+  const xJson = await xRes.json() as Record<string, unknown>;
 
   // Tranco returns { "domain": "twitter.com", "ranks": [{ "date": "...", "rank": N }, ...] }
-  const twitterRanks = twitterJson?.ranks ?? [];
-  const xRanks = xJson?.ranks ?? [];
+  const twitterRanks = (twitterJson?.ranks as RankEntry[]) ?? [];
+  const xRanks = (xJson?.ranks as RankEntry[]) ?? [];
 
   // Read existing accumulated history from KV, falling back to seed data
-  const existing = (await env.CACHE.get("tranco_history", "json")) ?? TRANCO_SEED;
+  const existing = (await env.CACHE.get<TrancoData>("tranco_history", "json")) ?? TRANCO_SEED;
 
   const twitterHistory = mergeHistory(existing.twitter, twitterRanks);
   const xHistory = mergeHistory(existing.x, xRanks);
@@ -96,10 +107,10 @@ async function fetchTrancoData(env) {
 }
 
 // Merge new entries into existing history, deduplicating by date
-function mergeHistory(existing, incoming) {
-  const map = new Map(existing.map((d) => [d.date, d.rank]));
+function mergeHistory(existing: RankEntry[], incoming: RankEntry[]): RankEntry[] {
+  const map = new Map<string, number>(existing.map((d) => [d.date, d.rank]));
   for (const entry of incoming) {
-    const date = entry.date ?? entry.listed_date;
+    const date = (entry.date as string | undefined) ?? (entry as unknown as Record<string, string>).listed_date;
     const rank = entry.rank;
     if (date && rank != null) map.set(date, rank);
   }
@@ -108,26 +119,32 @@ function mergeHistory(existing, incoming) {
     .sort((a, b) => (a.date < b.date ? -1 : 1));
 }
 
-function jsonResponse(data, status = 200) {
+function jsonResponse(data: ApiResponse, status = 200): Response {
   return new Response(JSON.stringify(data), { status, headers: RESPONSE_HEADERS });
 }
 
-export async function onRequestGet({ env, request }) {
+export async function onRequestGet({
+  env,
+  request,
+}: {
+  env: Env;
+  request: Request;
+}): Promise<Response> {
   const url = new URL(request.url);
   const forceRefresh = url.searchParams.get("refresh") === "true";
 
   // 1. Try KV cache first (skip if ?refresh=true)
   if (!forceRefresh) {
-    const cached = await env.CACHE.get("all_data", "json");
+    const cached = await env.CACHE.get<ApiResponse>("all_data", "json");
     if (cached) {
       return jsonResponse(cached);
     }
   }
 
   // 2. Cache miss — fetch live from all sources in parallel
-  const errors = [];
-  let radar = null;
-  let tranco = null;
+  const errors: string[] = [];
+  let radar: RadarData | null = null;
+  let tranco: TrancoData | null = null;
 
   const [radarResult, trancoResult] = await Promise.allSettled([
     fetchRadarData(env),
@@ -137,16 +154,16 @@ export async function onRequestGet({ env, request }) {
   if (radarResult.status === "fulfilled") {
     radar = radarResult.value;
   } else {
-    errors.push(`radar: ${radarResult.reason?.message ?? "unknown error"}`);
+    errors.push(`radar: ${(radarResult.reason as Error)?.message ?? "unknown error"}`);
   }
 
   if (trancoResult.status === "fulfilled") {
     tranco = trancoResult.value;
   } else {
-    errors.push(`tranco: ${trancoResult.reason?.message ?? "unknown error"}`);
+    errors.push(`tranco: ${(trancoResult.reason as Error)?.message ?? "unknown error"}`);
   }
 
-  const data = {
+  const data: ApiResponse = {
     radar,
     trends: null,
     tranco,
@@ -155,7 +172,7 @@ export async function onRequestGet({ env, request }) {
   };
 
   // 3. Save to KV with 24hr TTL (only when we have at least some data)
-  if (radar || tranco) {
+  if (radar ?? tranco) {
     await env.CACHE.put("all_data", JSON.stringify(data), { expirationTtl: 86400 });
   }
 
