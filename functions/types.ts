@@ -3,4 +3,5 @@
 export interface Env {
   CLOUDFLARE_RADAR_TOKEN: string;
   CACHE: KVNamespace;
+  REFRESH_SECRET: string;
 }

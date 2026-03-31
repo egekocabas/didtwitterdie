@@ -2,6 +2,7 @@
 
 interface Env {
   CACHE: KVNamespace;
+  REFRESH_SECRET: string;
 }
 
 export default {
@@ -11,7 +12,7 @@ export default {
 };
 
 async function refresh(env: Env): Promise<void> {
-  const res = await fetch("https://didtwitterdie.com/api/data?refresh=true");
+  const res = await fetch(`https://didtwitterdie.com/api/data?refresh=${encodeURIComponent(env.REFRESH_SECRET)}`);
   if (!res.ok) {
     throw new Error(`Refresh failed: ${res.status}`);
   }

@@ -131,7 +131,10 @@ export async function onRequestGet({
   request: Request;
 }): Promise<Response> {
   const url = new URL(request.url);
-  const forceRefresh = url.searchParams.get("refresh") === "true";
+  const refreshToken = url.searchParams.get("refresh");
+  const forceRefresh =
+    refreshToken !== null &&
+    refreshToken === env.REFRESH_SECRET;
 
   // 1. Try KV cache first (skip if ?refresh=true)
   if (!forceRefresh) {
