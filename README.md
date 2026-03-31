@@ -4,7 +4,7 @@
 
 > Did Twitter die when it rebranded to X?
 
-A single-page data dashboard comparing the popularity of `twitter.com` vs `x.com` since the July 2023 rebrand — using real data from Tranco domain rankings, Cloudflare Radar DNS, and Google Trends search interest.
+A single-page data dashboard comparing the popularity of `twitter.com` vs `x.com` since the July 2023 rebrand - using real data from Tranco, Cloudflare Radar, Cisco Umbrella, Majestic Million, Wikimedia pageviews, and Google Trends.
 
 **Live site**: [didtwitterdie.com](https://didtwitterdie.com)
 
@@ -15,7 +15,7 @@ A single-page data dashboard comparing the popularity of `twitter.com` vs `x.com
 - **Domain popularity over time** — Tranco List rankings (aggregated from Cloudflare DNS, Cisco Umbrella, Chrome UX, Majestic, Farsight)
 - **DNS traffic bucket** — Cloudflare Radar classification (Top 200 / Top 500)
 - **Search interest** — Google Trends for "twitter" vs "x.com" vs "x" since 2022
-- **The verdict** — a single % alive score based on relative domain ranking
+- **The verdict** — a verdict headline based on Tranco + Cloudflare Radar, with the other sources shown as supporting context
 
 ## Tech stack
 
@@ -29,7 +29,7 @@ See [DEVELOPMENT.md](DEVELOPMENT.md) for full architecture, data source details,
 
 ## License & Attribution
 
-See [ATTRIBUTION.md](ATTRIBUTION.md) for data source licenses and trademark notices.
+See [ATTRIBUTION.md](ATTRIBUTION.md) for data source licenses, trademark notes, and reuse posture.
 
 ## Disclaimer
 

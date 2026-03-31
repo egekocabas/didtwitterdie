@@ -6,6 +6,7 @@ import LoadingSkeleton from "@/components/LoadingSkeleton";
 import Footer from "@/components/Footer";
 import HeroSection from "@/components/HeroSection";
 import MethodologyPage from "@/pages/MethodologyPage";
+import PrivacyPage from "@/pages/PrivacyPage";
 
 const TrendsChart = lazy(() => import("@/components/TrendsChart"));
 const RankingChart = lazy(() => import("@/components/RankingChart"));
@@ -89,6 +90,15 @@ function App() {
       <Layout>
         <MethodologyPage />
         <Footer currentPage="methodology" />
+      </Layout>
+    );
+  }
+
+  if (pathname === "/privacy") {
+    return (
+      <Layout>
+        <PrivacyPage />
+        <Footer currentPage="privacy" />
       </Layout>
     );
   }

@@ -34,6 +34,8 @@ const MAJESTIC_URL = "https://downloads.majestic.com/majestic_million.csv";
 const MAJESTIC_RANGE_BYTES = 2 * 1024 * 1024;
 const WIKIMEDIA_BASE = "https://wikimedia.org/api/rest_v1/metrics/pageviews/per-article";
 const WIKIMEDIA_RANGE_START = "2022010100";
+const WIKIMEDIA_CLIENT_ID =
+  "DidTwitterDie/1.0 (https://didtwitterdie.com/methodology; https://github.com/egekocabas/didtwitterdie)";
 const RADAR_SOCIAL_CATEGORY = "Social Media";
 const RADAR_SERVICE_NAME = "X / Twitter";
 const UMBRELLA_BACKFILL_START = "2024-03-31";
@@ -205,9 +207,10 @@ async function fetchMajesticData(env: Env): Promise<MajesticData> {
 }
 
 async function fetchWikipediaData(): Promise<WikipediaData> {
+  const headers = createWikipediaHeaders();
   const [twitterRes, xRes] = await Promise.all([
-    fetch(buildWikipediaUrl("Twitter")),
-    fetch(buildWikipediaUrl("X_(social_network)")),
+    fetch(buildWikipediaUrl("Twitter"), { headers }),
+    fetch(buildWikipediaUrl("X_(social_network)"), { headers }),
   ]);
 
   if (!twitterRes.ok || !xRes.ok) {
@@ -323,6 +326,14 @@ async function backfillUmbrellaData(env: Env): Promise<{
 function createRadarHeaders(env: Env): Record<string, string> {
   return {
     Authorization: `Bearer ${env.CLOUDFLARE_RADAR_TOKEN}`,
+  };
+}
+
+function createWikipediaHeaders(): Record<string, string> {
+  return {
+    Accept: "application/json",
+    "Api-User-Agent": WIKIMEDIA_CLIENT_ID,
+    "User-Agent": WIKIMEDIA_CLIENT_ID,
   };
 }
 

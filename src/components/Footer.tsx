@@ -2,7 +2,7 @@ import { buildInfo } from "@/utils/buildInfo";
 
 interface FooterProps {
   updatedAt?: number | null;
-  currentPage?: "dashboard" | "methodology";
+  currentPage?: "dashboard" | "methodology" | "privacy";
 }
 
 export default function Footer({ updatedAt, currentPage = "dashboard" }: FooterProps) {
@@ -38,12 +38,30 @@ export default function Footer({ updatedAt, currentPage = "dashboard" }: FooterP
           )}
         </div>
         <nav className="flex flex-wrap items-center justify-center gap-x-4 gap-y-2 sm:justify-end">
-          <a
-            href={currentPage === "dashboard" ? "/methodology" : "/"}
-            className="font-medium underline underline-offset-4 transition-colors hover:text-gray-700 dark:hover:text-gray-200"
-          >
-            {currentPage === "dashboard" ? "Sources & methodology" : "Back to dashboard"}
-          </a>
+          {currentPage !== "dashboard" && (
+            <a
+              href="/"
+              className="font-medium underline underline-offset-4 transition-colors hover:text-gray-700 dark:hover:text-gray-200"
+            >
+              Dashboard
+            </a>
+          )}
+          {currentPage !== "methodology" && (
+            <a
+              href="/methodology"
+              className="font-medium underline underline-offset-4 transition-colors hover:text-gray-700 dark:hover:text-gray-200"
+            >
+              Sources & methodology
+            </a>
+          )}
+          {currentPage !== "privacy" && (
+            <a
+              href="/privacy"
+              className="font-medium underline underline-offset-4 transition-colors hover:text-gray-700 dark:hover:text-gray-200"
+            >
+              Privacy
+            </a>
+          )}
           <a
             href={buildInfo.repositoryUrl}
             target="_blank"

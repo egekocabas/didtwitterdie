@@ -120,6 +120,10 @@ export default function WikipediaAttentionSection({ data }: WikipediaAttentionSe
             <span className="font-semibold">{latestX.views.toLocaleString("en-US")}</span> for X. Current-month values may be partial.
           </p>
         )}
+        <p className="text-xs text-gray-400 dark:text-gray-500">
+          Source: Wikimedia Analytics API pageviews data (CC0). Read this as title-level attention,
+          especially because the Twitter article path redirects to the X article.
+        </p>
       </div>
     </ChartWrapper>
   );

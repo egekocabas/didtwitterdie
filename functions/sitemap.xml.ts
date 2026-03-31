@@ -14,6 +14,18 @@ export async function onRequestGet({ env }: { env: Env }): Promise<Response> {
     <changefreq>daily</changefreq>
     <priority>1.0</priority>
   </url>
+  <url>
+    <loc>https://didtwitterdie.com/methodology</loc>
+    <lastmod>${lastmod}</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://didtwitterdie.com/privacy</loc>
+    <lastmod>${lastmod}</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.6</priority>
+  </url>
 </urlset>`;
 
   return new Response(xml, {

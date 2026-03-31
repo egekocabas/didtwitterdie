@@ -54,7 +54,21 @@ export default function RankingChart({ data }: RankingChartProps) {
   return (
     <ChartWrapper
       title="Domain popularity over time"
-      description="Combined ranking from Cloudflare DNS, Cisco Umbrella, Chrome UX, Majestic, and Farsight passive DNS via the Tranco List."
+      description={
+        <>
+          Combined ranking from Cloudflare DNS, Cisco Umbrella, Chrome UX, Majestic, and Farsight
+          passive DNS via the{" "}
+          <a
+            href="https://tranco-list.eu"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="underline hover:text-gray-700 dark:hover:text-gray-300"
+          >
+            Tranco List
+          </a>
+          .
+        </>
+      }
     >
       <p className="text-xs text-gray-400 dark:text-gray-500">Lower rank = more popular.</p>
       <TimeRangeSelector value={range} onChange={setRange} />
@@ -113,12 +127,15 @@ export default function RankingChart({ data }: RankingChartProps) {
         </LineChart>
       </ResponsiveContainer>
       {latestTwitter && latestX && (
-        <p className="text-xs text-gray-500 dark:text-gray-400 mt-2">
+        <p className="mt-2 text-xs text-gray-500 dark:text-gray-400">
           As of {formatDate(latestTwitter.date)}, twitter.com ranks{" "}
           <span className="font-semibold text-[#1DA1F2]">#{latestTwitter.rank}</span> globally
           vs x.com at <span className="font-semibold">#{latestX.rank}</span> in the Tranco list.
         </p>
       )}
+      <p className="text-xs text-gray-400 dark:text-gray-500">
+        Source: Tranco List. Citation: Le Pochat et al., NDSS 2019.
+      </p>
     </ChartWrapper>
   );
 }

@@ -20,6 +20,7 @@ interface DirectRankSignalsSectionProps {
 interface RankSourceCardProps {
   title: string;
   description: string;
+  attributionNote: string;
   data: {
     twitter: RankEntry[];
     x: RankEntry[];
@@ -46,14 +47,16 @@ export default function DirectRankSignalsSection({
       <div className="grid gap-6 lg:grid-cols-2">
         <RankSourceCard
           title="Cisco Umbrella"
-          description="Daily DNS popularity across Cisco Umbrella’s network, with best-effort quarterly archive backfill."
+          description="Daily DNS popularity across Cisco Umbrella's network, with best-effort quarterly archive backfill."
+          attributionNote="Source: Cisco Umbrella Popularity List. The public list page reviewed did not state an explicit dataset license, so this site shows only narrow comparative excerpts."
           data={umbrella}
           sourceHref="https://umbrella-static.s3-us-west-1.amazonaws.com/index.html"
           fallbackNote="Historical backfill uses dated archive snapshots and the latest live list."
         />
         <RankSourceCard
           title="Majestic Million"
-          description="Backlink and web-graph popularity from Majestic’s free million-domain list."
+          description="Backlink and web-graph popularity from Majestic's free million-domain list."
+          attributionNote="Source: Majestic Million. The dataset page advertises CC BY 3.0, while Majestic's broader site guidance still cautions against reseller-like reuse."
           data={majestic}
           sourceHref="https://majestic.com/reports/majestic-million"
           fallbackNote="This source is intentionally forward-only for now, so trend history will build from rollout."
@@ -66,6 +69,7 @@ export default function DirectRankSignalsSection({
 function RankSourceCard({
   title,
   description,
+  attributionNote,
   data,
   sourceHref,
   fallbackNote,
@@ -99,11 +103,11 @@ function RankSourceCard({
       <div className="grid grid-cols-2 gap-4">
         <div className="rounded-xl bg-gray-50 dark:bg-gray-800/60 p-4">
           <p className="text-xs uppercase tracking-wide text-gray-400 dark:text-gray-500">twitter.com</p>
-          <p className="text-3xl font-bold text-[#1DA1F2]">{latestTwitter != null ? `#${latestTwitter}` : "—"}</p>
+          <p className="text-3xl font-bold text-[#1DA1F2]">{latestTwitter != null ? `#${latestTwitter}` : "-"}</p>
         </div>
         <div className="rounded-xl bg-gray-50 dark:bg-gray-800/60 p-4">
           <p className="text-xs uppercase tracking-wide text-gray-400 dark:text-gray-500">x.com</p>
-          <p className="text-3xl font-bold">{latestX != null ? `#${latestX}` : "—"}</p>
+          <p className="text-3xl font-bold">{latestX != null ? `#${latestX}` : "-"}</p>
         </div>
       </div>
 
@@ -170,6 +174,7 @@ function RankSourceCard({
         Lower rank = more popular. Snapshot date: {data.asOf ?? "unknown"}.
         {data.historyLagDays != null ? ` Archive lag: ${data.historyLagDays} day${data.historyLagDays === 1 ? "" : "s"}.` : ""}
       </p>
+      <p className="text-xs text-gray-400 dark:text-gray-500">{attributionNote}</p>
     </article>
   );
 }

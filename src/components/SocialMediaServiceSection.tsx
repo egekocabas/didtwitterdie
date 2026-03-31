@@ -79,6 +79,18 @@ export default function SocialMediaServiceSection({ data }: SocialMediaServiceSe
             <span className="font-semibold">#{latest}</span> among global social media services.
           </p>
         )}
+        <p className="text-xs text-gray-400 dark:text-gray-500">
+          Source:{" "}
+          <a
+            href="https://radar.cloudflare.com"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="underline hover:text-gray-600 dark:hover:text-gray-300"
+          >
+            Cloudflare Radar
+          </a>
+          . Radar API data is licensed under CC BY-NC 4.0.
+        </p>
       </div>
     </ChartWrapper>
   );

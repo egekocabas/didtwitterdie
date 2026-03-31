@@ -145,6 +145,8 @@ Response: { "result": { "details_0": { "bucket": "200", "rank": null } } }
 
 **Future**: Applied for Google Trends API alpha program. If accepted, will migrate from embed to a custom Recharts AreaChart with raw data for verdict calculation.
 
+**Compliance note**: The official embed causes visitors’ browsers to contact Google directly, so the live site should disclose that behavior on its Privacy page.
+
 ### 3. Tranco List (aggregated domain ranking)
 
 - **What it measures**: Combined popularity rank from 5 independent sources (Cloudflare Radar DNS, Cisco Umbrella DNS, Chrome UX Report, Majestic backlinks, Farsight passive DNS)
@@ -152,7 +154,7 @@ Response: { "result": { "details_0": { "bucket": "200", "rank": null } } }
 - **API**: Free REST API + Python library
 - **Historical data**: Past versions of lists can be downloaded; API gives current + 30 days back
 - **Citation**: Le Pochat et al., "Tranco: A Research-Oriented Top Sites Ranking Hardened Against Manipulation", NDSS 2019. DOI: [10.14722/ndss.2019.23386](https://doi.org/10.14722/ndss.2019.23386)
-- **License**: No explicit license published. Aggregates CC-licensed data — see [ATTRIBUTION.md](ATTRIBUTION.md) for full details.
+- **License**: The official pages reviewed do not clearly publish a standalone reuse license for Tranco’s aggregated output. Treat it as a cited comparative source and see [ATTRIBUTION.md](ATTRIBUTION.md) for the current reuse posture.
 
 **Key endpoints**:
 
@@ -371,9 +373,9 @@ Each section receives only its slice of data as props:
 ### Section 4: The verdict
 
 - **Data source**: Tranco ranking + Cloudflare Radar DNS bucket
-- **Display**: A summary verdict card, e.g., "Twitter is ___% alive"
+- **Display**: A summary verdict card led by the headline "Not dead yet." or "X has won."
 - **Formula**: Based on latest Tranco ranks — if twitter.com rank is lower (better) than x.com, "Not dead yet." Plus a line showing Radar DNS bucket comparison.
-- **Disclaimer**: Includes a footnote noting the twitter.com→x.com redirect overlap, the relative nature of "% alive", and that Google Trends is not factored into the verdict.
+- **Disclaimer**: Includes a footnote noting the twitter.com→x.com redirect overlap, the relative nature of the comparison, and that Google Trends and the newer supporting sources are not factored into the verdict.
 
 ---
 
@@ -773,7 +775,13 @@ export async function onRequestGet(context) {
 
 ### Attribution requirement
 
-Cloudflare Radar data is licensed under CC BY-NC 4.0. You must include attribution somewhere on the site (the footer is fine). Example: "DNS popularity data from Cloudflare Radar" with a link to https://radar.cloudflare.com.
+Cloudflare Radar data is licensed under CC BY-NC 4.0. Attribution should be visible in the product itself, not only in repo docs. The current approach is to keep methodology/licensing detail on `/methodology` and compact source footnotes near the relevant chart sections.
+
+### Compliance and branding notes
+
+- The site now maintains a dedicated `/privacy` page because Cloudflare Web Analytics is enabled and the Google Trends chart is an embedded third-party iframe.
+- Wikimedia Analytics API requests must send a descriptive `User-Agent` or `Api-User-Agent`.
+- The current custom bird artwork intentionally remains an accepted brand-risk item for now because it evokes legacy Twitter branding. Keep replacement easy if that ever becomes a problem.
 
 ### Complete .gitignore
 

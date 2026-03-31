@@ -33,8 +33,8 @@ export default function TrendsChart() {
           className="dark:[filter:invert(1)_hue-rotate(180deg)]"
         />
       </div>
-      <p className="text-xs text-gray-400 dark:text-gray-500 mt-2 text-center">
-        Chart powered by{" "}
+      <p className="mt-2 text-center text-xs text-gray-400 dark:text-gray-500">
+        Data source:{" "}
         <a
           href="https://trends.google.com"
           target="_blank"
@@ -43,6 +43,7 @@ export default function TrendsChart() {
         >
           Google Trends
         </a>
+        . Official embed; Google terms apply.
       </p>
     </ChartWrapper>
   );
