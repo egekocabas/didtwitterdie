@@ -1,8 +1,34 @@
+import { execSync } from "node:child_process"
 import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
 import tailwindcss from '@tailwindcss/vite'
 
+const repositoryUrl = "https://github.com/egekocabas/didtwitterdie"
+
+function resolveBuildSha() {
+  const envSha =
+    process.env.CF_PAGES_COMMIT_SHA ||
+    process.env.GITHUB_SHA ||
+    process.env.VITE_BUILD_SHA
+
+  if (envSha) {
+    return envSha.trim()
+  }
+
+  try {
+    return execSync("git rev-parse HEAD", { stdio: ["ignore", "pipe", "ignore"] })
+      .toString()
+      .trim()
+  } catch {
+    return ""
+  }
+}
+
 export default defineConfig({
+  define: {
+    __BUILD_SHA__: JSON.stringify(resolveBuildSha()),
+    __REPOSITORY_URL__: JSON.stringify(repositoryUrl),
+  },
   plugins: [react(), tailwindcss()],
   resolve: {
     alias: { '@': '/src' },

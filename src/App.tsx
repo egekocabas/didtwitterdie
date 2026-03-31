@@ -1,9 +1,11 @@
 import { lazy, Suspense } from "react";
 import { useData } from "@/hooks/useData";
+import { usePageMeta } from "@/hooks/usePageMeta";
 import Layout from "@/components/Layout";
 import LoadingSkeleton from "@/components/LoadingSkeleton";
 import Footer from "@/components/Footer";
 import HeroSection from "@/components/HeroSection";
+import MethodologyPage from "@/pages/MethodologyPage";
 
 const TrendsChart = lazy(() => import("@/components/TrendsChart"));
 const RankingChart = lazy(() => import("@/components/RankingChart"));
@@ -25,7 +27,14 @@ function ErrorState({ message }: ErrorStateProps) {
   );
 }
 
-function App() {
+function DashboardPage() {
+  usePageMeta({
+    title: "Did Twitter Die?",
+    description:
+      "Real data comparing twitter.com vs x.com popularity — DNS queries, search interest, and domain rankings since the July 2023 rebrand.",
+    canonicalPath: "/",
+  });
+
   const { data, loading, error } = useData();
 
   if (loading) {
@@ -58,10 +67,33 @@ function App() {
           <SocialMediaServiceSection data={data.radarServices} />
           <VerdictSection data={data} />
         </Suspense>
-        <Footer updatedAt={data.updated_at} />
+        <Footer updatedAt={data.updated_at} currentPage="dashboard" />
       </div>
     </Layout>
   );
+}
+
+function normalizePathname(pathname: string): string {
+  if (pathname.length > 1 && pathname.endsWith("/")) {
+    return pathname.slice(0, -1);
+  }
+
+  return pathname || "/";
+}
+
+function App() {
+  const pathname = normalizePathname(window.location.pathname);
+
+  if (pathname === "/methodology") {
+    return (
+      <Layout>
+        <MethodologyPage />
+        <Footer currentPage="methodology" />
+      </Layout>
+    );
+  }
+
+  return <DashboardPage />;
 }
 
 export default App;
