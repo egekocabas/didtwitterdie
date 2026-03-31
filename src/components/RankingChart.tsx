@@ -48,6 +48,9 @@ export default function RankingChart({ data }: RankingChartProps) {
   const xFiltered = filterByRange(data?.x ?? [], range);
   const merged = mergeByDate(twitterFiltered, xFiltered);
 
+  const latestTwitter = data?.twitter?.at(-1);
+  const latestX = data?.x?.at(-1);
+
   return (
     <ChartWrapper
       title="Domain popularity over time"
@@ -55,6 +58,7 @@ export default function RankingChart({ data }: RankingChartProps) {
     >
       <p className="text-xs text-gray-400 dark:text-gray-500">Lower rank = more popular.</p>
       <TimeRangeSelector value={range} onChange={setRange} />
+
       <ResponsiveContainer width="100%" height={300}>
         <LineChart data={merged} margin={{ top: 8, right: 16, left: 0, bottom: 0 }}>
           <CartesianGrid strokeDasharray="3 3" stroke="var(--chart-grid)" />
@@ -105,6 +109,13 @@ export default function RankingChart({ data }: RankingChartProps) {
           />
         </LineChart>
       </ResponsiveContainer>
+      {latestTwitter && latestX && (
+        <p className="text-xs text-gray-500 dark:text-gray-400 mt-2">
+          As of {formatDate(latestTwitter.date)}, twitter.com ranks{" "}
+          <span className="font-semibold text-[#1DA1F2]">#{latestTwitter.rank}</span> globally
+          vs x.com at <span className="font-semibold">#{latestX.rank}</span> in the Tranco list.
+        </p>
+      )}
     </ChartWrapper>
   );
 }

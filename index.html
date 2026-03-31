@@ -24,13 +24,30 @@
 
     <!-- Structured data -->
     <script type="application/ld+json">
-    {
-      "@context": "https://schema.org",
-      "@type": "WebSite",
-      "name": "Did Twitter Die?",
-      "url": "https://didtwitterdie.com/",
-      "description": "Real data comparing twitter.com vs x.com popularity — DNS queries, search interest, and domain rankings since the July 2023 rebrand."
-    }
+    [
+      {
+        "@context": "https://schema.org",
+        "@type": "WebSite",
+        "name": "Did Twitter Die?",
+        "url": "https://didtwitterdie.com/",
+        "description": "Real data comparing twitter.com vs x.com popularity — DNS queries, search interest, and domain rankings since the July 2023 rebrand."
+      },
+      {
+        "@context": "https://schema.org",
+        "@type": "Dataset",
+        "name": "twitter.com vs x.com Popularity Dataset",
+        "description": "Historical global domain ranking data for twitter.com and x.com sourced from the Tranco List (Cloudflare DNS, Cisco Umbrella, Chrome UX, Majestic, Farsight) and Cloudflare Radar DNS, updated daily since the July 2023 rebrand.",
+        "url": "https://didtwitterdie.com/",
+        "creator": {
+          "@type": "Person",
+          "name": "Ege Kocabas"
+        },
+        "license": "https://creativecommons.org/licenses/by-nc/4.0/",
+        "keywords": ["twitter", "x.com", "domain ranking", "web traffic", "social media", "Tranco", "Cloudflare Radar"],
+        "temporalCoverage": "2022-09-01/..",
+        "spatialCoverage": "Global"
+      }
+    ]
     </script>
 
     <!-- Open Graph -->
@@ -48,6 +65,27 @@
   </head>
   <body>
     <div id="root"></div>
+    <noscript>
+      <style>
+        .noscript { font-family: sans-serif; max-width: 800px; margin: 0 auto; padding: 2rem; }
+        .noscript h1 { font-size: 3rem; font-weight: bold; }
+        .noscript h2 { font-size: 1.5rem; font-weight: bold; margin-top: 2rem; }
+        .noscript p { color: #6b7280; margin-top: 0.5rem; }
+      </style>
+      <div class="noscript">
+        <h1>Did Twitter Die?</h1>
+        <p>Tracking the slow death (or survival) of Twitter since the rebrand to X on July 24, 2023.</p>
+        <p>This site uses real data to compare twitter.com vs x.com across DNS query popularity, global domain rankings, and Google search interest — updated daily.</p>
+        <h2>Domain popularity over time</h2>
+        <p>Historical Tranco global domain ranking of twitter.com vs x.com since the July 2023 rebrand. A lower rank number means more popular.</p>
+        <h2>What people Google</h2>
+        <p>Google Trends search interest for "twitter" vs "x.com" over time, showing whether people are still searching for Twitter by its original name.</p>
+        <h2>The verdict</h2>
+        <p>Based on aggregated DNS and web traffic signals from the Tranco List and Cloudflare Radar, a live verdict on whether Twitter is dead or still alive relative to X.</p>
+        <p>Data sources: Cloudflare Radar, Tranco List (Cloudflare DNS, Cisco Umbrella, Chrome UX, Majestic, Farsight), Google Trends.</p>
+        <p>Please enable JavaScript to view the interactive charts and live data.</p>
+      </div>
+    </noscript>
     <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>

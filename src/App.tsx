@@ -1,11 +1,13 @@
+import { lazy, Suspense } from "react";
 import { useData } from "./hooks/useData";
 import Layout from "./components/Layout";
 import LoadingSkeleton from "./components/LoadingSkeleton";
 import Footer from "./components/Footer";
 import HeroSection from "./components/HeroSection";
-import TrendsChart from "./components/TrendsChart";
-import RankingChart from "./components/RankingChart";
-import VerdictSection from "./components/VerdictSection";
+
+const TrendsChart = lazy(() => import("./components/TrendsChart"));
+const RankingChart = lazy(() => import("./components/RankingChart"));
+const VerdictSection = lazy(() => import("./components/VerdictSection"));
 
 interface ErrorStateProps {
   message: string;
@@ -45,9 +47,11 @@ function App() {
     <Layout>
       <div className="space-y-20">
         <HeroSection radar={data.radar} tranco={data.tranco} />
-        <RankingChart data={data.tranco} />
-        <TrendsChart />
-        <VerdictSection data={data} />
+        <Suspense fallback={<LoadingSkeleton />}>
+          <RankingChart data={data.tranco} />
+          <TrendsChart />
+          <VerdictSection data={data} />
+        </Suspense>
         <Footer updatedAt={data.updated_at} />
       </div>
     </Layout>
