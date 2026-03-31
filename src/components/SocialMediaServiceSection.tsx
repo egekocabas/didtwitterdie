@@ -66,7 +66,7 @@ export default function SocialMediaServiceSection({ data }: SocialMediaServiceSe
             <Line
               type="monotone"
               dataKey="rank"
-              stroke="#111827"
+              stroke="var(--chart-service-stroke)"
               strokeWidth={2.5}
               dot={false}
               activeDot={{ r: 4 }}

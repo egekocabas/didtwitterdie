@@ -6,6 +6,7 @@
 :root {
   --chart-grid: #e5e7eb;
   --chart-x-stroke: #111827;
+  --chart-service-stroke: #111827;
   --tooltip-bg: #ffffff;
   --tooltip-border: #e5e7eb;
   --tick-color: #9ca3af;
@@ -22,6 +23,7 @@
 .dark {
   --chart-grid: #374151;
   --chart-x-stroke: #9ca3af;
+  --chart-service-stroke: #f3f4f6;
   --tooltip-bg: #1f2937;
   --tooltip-border: #374151;
   --tick-color: #6b7280;

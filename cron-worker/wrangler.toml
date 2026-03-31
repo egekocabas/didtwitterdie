@@ -8,7 +8,7 @@ binding = "CACHE"
 id = "12d1ca23268245769547ba7b0ea1eedf"
 
 [triggers]
-crons = ["0 6 * * *"]
+crons = ["0 6 * * *", "0 9,13,17,21 * * *"]
 
 [observability]
 enabled = true

@@ -37,6 +37,7 @@ const WIKIMEDIA_RANGE_START = "2022010100";
 const RADAR_SOCIAL_CATEGORY = "Social Media";
 const RADAR_SERVICE_NAME = "X / Twitter";
 const UMBRELLA_BACKFILL_START = "2024-03-31";
+const UMBRELLA_BACKFILL_SOURCE = "umbrella";
 
 const TRANCO_SEED: TrancoData = {
   twitter: [
@@ -167,63 +168,18 @@ async function fetchTrancoData(env: Env): Promise<TrancoData> {
 }
 
 async function fetchUmbrellaData(env: Env): Promise<UmbrellaData> {
-  const currentRes = await fetch(UMBRELLA_CURRENT_URL);
-  if (!currentRes.ok) {
-    throw new Error(`Umbrella fetch failed: current=${currentRes.status}`);
-  }
+  const currentSnapshot = await fetchUmbrellaCurrentSnapshot();
+  const existing = await getStoredUmbrellaData(env);
+  const history = appendDomainRanks(
+    {
+      twitter: existing.twitter,
+      x: existing.x,
+    },
+    currentSnapshot.asOf,
+    currentSnapshot.ranks,
+  );
 
-  const currentText = await extractSingleZipEntryText(await currentRes.arrayBuffer());
-  const currentRanks = parseUmbrellaCsv(currentText);
-  const asOf = toIsoDate(currentRes.headers.get("last-modified"));
-  const existing =
-    (await env.CACHE.get<UmbrellaData>("umbrella_history", "json")) ??
-    createUmbrellaData({ twitter: [], x: [] }, null);
-
-  let history = {
-    twitter: existing.twitter,
-    x: existing.x,
-  };
-
-  const quarterlyDates = getQuarterlyBackfillDates(UMBRELLA_BACKFILL_START, asOf);
-  const nextBackfillDate = getNextMissingBackfillDate(quarterlyDates, history);
-
-  if (nextBackfillDate) {
-    const backfill = await backfillArchiveRanks(
-      history,
-      [nextBackfillDate],
-      async (date) => {
-        const archiveRes = await fetch(`${UMBRELLA_ARCHIVE_URL}${date}.csv.zip`);
-
-        if (archiveRes.status === 404) {
-          return { status: 404 };
-        }
-
-        if (!archiveRes.ok) {
-          return { status: archiveRes.status };
-        }
-
-        return {
-          status: archiveRes.status,
-          text: await extractSingleZipEntryText(await archiveRes.arrayBuffer()),
-        };
-      },
-      parseUmbrellaCsv,
-    );
-
-    history = {
-      twitter: backfill.twitter,
-      x: backfill.x,
-    };
-  }
-
-  history = appendDomainRanks(history, asOf, currentRanks);
-  const latestBackfilledQuarterDate = getLatestBackfilledQuarterDate(quarterlyDates, history);
-  const historyLagDays =
-    latestBackfilledQuarterDate != null
-      ? daysBetween(latestBackfilledQuarterDate, asOf)
-      : undefined;
-
-  const data = createUmbrellaData(history, asOf, historyLagDays);
+  const data = createUmbrellaSnapshot(history, currentSnapshot.asOf);
   await env.CACHE.put("umbrella_history", JSON.stringify(data));
   return data;
 }
@@ -273,10 +229,164 @@ async function fetchWikipediaData(): Promise<WikipediaData> {
   return { twitter, x, asOf };
 }
 
+async function backfillUmbrellaData(env: Env): Promise<{
+  source: "umbrella";
+  status: "backfilled" | "complete" | "waiting_for_archive";
+  attemptedDate: string | null;
+  backfilledDate: string | null;
+  asOf: string | null;
+  historyLagDays: number | null;
+}> {
+  const existing = await getStoredUmbrellaData(env);
+  let history = {
+    twitter: existing.twitter,
+    x: existing.x,
+  };
+  let asOf = existing.asOf;
+  let updatedCache = false;
+
+  if (asOf == null) {
+    const currentSnapshot = await fetchUmbrellaCurrentSnapshot();
+    history = appendDomainRanks(history, currentSnapshot.asOf, currentSnapshot.ranks);
+    asOf = currentSnapshot.asOf;
+    updatedCache = true;
+  }
+
+  if (asOf == null) {
+    throw new Error("Umbrella backfill requires a current snapshot date");
+  }
+
+  const quarterlyDates = getQuarterlyBackfillDates(UMBRELLA_BACKFILL_START, asOf);
+  const nextBackfillDate = getNextMissingBackfillDate(quarterlyDates, history);
+
+  if (nextBackfillDate == null) {
+    const data = createUmbrellaSnapshot(history, asOf);
+    await env.CACHE.put("umbrella_history", JSON.stringify(data));
+    if (updatedCache) {
+      await updateCachedUmbrellaSlice(env, data);
+    }
+
+    return {
+      source: UMBRELLA_BACKFILL_SOURCE,
+      status: "complete",
+      attemptedDate: null,
+      backfilledDate: null,
+      asOf,
+      historyLagDays: data.historyLagDays ?? null,
+    };
+  }
+
+  const backfill = await backfillArchiveRanks(
+    history,
+    [nextBackfillDate],
+    async (date) => {
+      const archiveRes = await fetch(`${UMBRELLA_ARCHIVE_URL}${date}.csv.zip`);
+
+      if (archiveRes.status === 404) {
+        return { status: 404 };
+      }
+
+      if (!archiveRes.ok) {
+        return { status: archiveRes.status };
+      }
+
+      return {
+        status: archiveRes.status,
+        text: await extractSingleZipEntryText(await archiveRes.arrayBuffer()),
+      };
+    },
+    parseUmbrellaCsv,
+  );
+
+  history = {
+    twitter: backfill.twitter,
+    x: backfill.x,
+  };
+
+  const data = createUmbrellaSnapshot(history, asOf);
+  await env.CACHE.put("umbrella_history", JSON.stringify(data));
+
+  if (backfill.lastSuccessfulDate != null || updatedCache) {
+    await updateCachedUmbrellaSlice(env, data);
+  }
+
+  return {
+    source: UMBRELLA_BACKFILL_SOURCE,
+    status: backfill.lastSuccessfulDate != null ? "backfilled" : "waiting_for_archive",
+    attemptedDate: nextBackfillDate,
+    backfilledDate: backfill.lastSuccessfulDate,
+    asOf,
+    historyLagDays: data.historyLagDays ?? null,
+  };
+}
+
 function createRadarHeaders(env: Env): Record<string, string> {
   return {
     Authorization: `Bearer ${env.CLOUDFLARE_RADAR_TOKEN}`,
   };
+}
+
+async function fetchUmbrellaCurrentSnapshot(): Promise<{
+  ranks: {
+    twitter: number | null;
+    x: number | null;
+  };
+  asOf: string;
+}> {
+  const currentRes = await fetch(UMBRELLA_CURRENT_URL);
+  if (!currentRes.ok) {
+    throw new Error(`Umbrella fetch failed: current=${currentRes.status}`);
+  }
+
+  const currentText = await extractSingleZipEntryText(await currentRes.arrayBuffer());
+
+  return {
+    ranks: parseUmbrellaCsv(currentText),
+    asOf: toIsoDate(currentRes.headers.get("last-modified")),
+  };
+}
+
+async function getStoredUmbrellaData(env: Env): Promise<UmbrellaData> {
+  return (
+    (await env.CACHE.get<UmbrellaData>("umbrella_history", "json")) ??
+    createUmbrellaData({ twitter: [], x: [] }, null)
+  );
+}
+
+function createUmbrellaSnapshot(
+  history: {
+    twitter: RankEntry[];
+    x: RankEntry[];
+  },
+  asOf: string,
+): UmbrellaData {
+  const quarterlyDates = getQuarterlyBackfillDates(UMBRELLA_BACKFILL_START, asOf);
+  const latestBackfilledQuarterDate = getLatestBackfilledQuarterDate(quarterlyDates, history);
+  const historyLagDays =
+    latestBackfilledQuarterDate != null
+      ? daysBetween(latestBackfilledQuarterDate, asOf)
+      : undefined;
+
+  return createUmbrellaData(history, asOf, historyLagDays);
+}
+
+async function updateCachedUmbrellaSlice(env: Env, umbrella: UmbrellaData): Promise<void> {
+  const cached = await env.CACHE.get<ApiResponse>("all_data", "json");
+
+  if (!cached) {
+    return;
+  }
+
+  const { errors: _errors, ...cachedWithoutErrors } = cached;
+  const nextErrors = cached.errors?.filter((error) => !error.startsWith("umbrella:"));
+  const nextCached: ApiResponse = {
+    ...cachedWithoutErrors,
+    umbrella,
+    updated_at: Date.now(),
+    ...(nextErrors && nextErrors.length > 0 ? { errors: nextErrors } : {}),
+  };
+
+  await env.CACHE.put("all_data", JSON.stringify(nextCached), { expirationTtl: 86400 });
 }
 
 async function parseJsonObject(response: Response): Promise<Record<string, unknown>> {
@@ -341,7 +451,7 @@ function daysBetween(fromDate: string, toDate: string): number {
   return Math.max(0, Math.round((end.getTime() - start.getTime()) / 86400000));
 }
 
-function jsonResponse(data: ApiResponse, status = 200): Response {
+function jsonResponse(data: unknown, status = 200): Response {
   return new Response(JSON.stringify(data), { status, headers: RESPONSE_HEADERS });
 }
 
@@ -362,12 +472,33 @@ export async function onRequestGet({
 }): Promise<Response> {
   const url = new URL(request.url);
   const refreshToken = url.searchParams.get("refresh");
+  const backfillToken = url.searchParams.get("backfill");
+  const backfillSource = url.searchParams.get("source");
   const forceRefresh = refreshToken !== null && refreshToken === env.REFRESH_SECRET;
+  const forceUmbrellaBackfill =
+    backfillToken !== null &&
+    backfillToken === env.REFRESH_SECRET &&
+    backfillSource === UMBRELLA_BACKFILL_SOURCE;
 
-  if (!forceRefresh) {
+  if (!forceRefresh && !forceUmbrellaBackfill) {
     const cached = await env.CACHE.get<ApiResponse>("all_data", "json");
     if (cached) {
       return jsonResponse(cached);
+    }
+  }
+
+  if (forceUmbrellaBackfill) {
+    try {
+      const result = await backfillUmbrellaData(env);
+      return jsonResponse(result);
+    } catch (error) {
+      return jsonResponse(
+        {
+          source: UMBRELLA_BACKFILL_SOURCE,
+          error: getErrorMessage(error),
+        },
+        500,
+      );
     }
   }
 

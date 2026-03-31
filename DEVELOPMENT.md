@@ -47,7 +47,7 @@ The core concept: compare `twitter.com` vs `x.com` across multiple metrics (DNS 
 | Animations | **Framer Motion** | Scroll-triggered fade/slide-in for each chart section |
 | Backend | **Cloudflare Pages Functions** | Serverless API routes (files in `functions/` folder) |
 | Cache | **Cloudflare Workers KV** | Key-value store for cached API data |
-| Cron | **Cloudflare Cron Triggers** | Scheduled worker to refresh cache daily |
+| Cron | **Cloudflare Cron Triggers** | Scheduled worker to refresh the main cache daily and backfill Umbrella history in small chunks |
 | Hosting | **Cloudflare Pages** | Free tier, unlimited static asset bandwidth, custom domain support |
 
 **Why NOT Next.js**: Next.js starter apps can exceed Cloudflare's free-tier bundle size limit (3MB compressed). Vite + React is lighter and the React code is identical.
@@ -68,10 +68,12 @@ The core concept: compare `twitter.com` vs `x.com` across multiple metrics (DNS 
            │                             │
            ▼                             ▼
 ┌─────────────────────────────────────────────────┐
-│          CLOUDFLARE CRON WORKER (1x/day)         │
+│      CLOUDFLARE CRON WORKER (refresh + backfill) │
 │                                                  │
-│  Fetches from sources → merges data →            │
-│  writes to KV cache                              │
+│  06:00 UTC: full refresh of current data         │
+│  09:00/13:00/17:00/21:00 UTC:                    │
+│  Umbrella backfill, one missing quarter/run      │
+│  writes merged data to KV cache                  │
 └──────────────────────┬──────────────────────────┘
                        │
                        ▼
@@ -233,7 +235,10 @@ export async function onRequestGet({ env, request }) {
 ```toml
 # wrangler.toml
 [triggers]
-crons = ["0 6 * * *"]   # runs daily at 06:00 UTC
+crons = [
+  "0 6 * * *",           # full refresh at 06:00 UTC
+  "0 9,13,17,21 * * *",  # Umbrella backfill 4x/day starting at 09:00 UTC
+]
 ```
 
 **Important — Pages Functions cron setup**: Cloudflare Pages Functions don't natively support cron triggers the same way standalone Workers do. There are two approaches:
@@ -244,10 +249,10 @@ crons = ["0 6 * * *"]   # runs daily at 06:00 UTC
 **Recommended for MVP**: Start with approach 2 (TTL-based expiration). The cache-miss fallback in your API route already handles this. Add a dedicated cron Worker later if you want guaranteed freshness.
 
 The cron worker (when implemented):
-1. Fetches fresh data from Cloudflare Radar and Tranco
-2. For Radar: overwrites with full historical data (the API returns complete history)
-3. For Tranco: merges/appends today's rank to existing historical array
-4. Saves merged result to KV
+1. Full refresh cron fetches fresh data from Cloudflare Radar, Tranco, Majestic, Wikipedia, and current Umbrella data
+2. Umbrella backfill cron fetches one missing Cisco quarterly archive per run
+3. Historical series are merged into the existing KV arrays
+4. The cached `all_data` payload is updated after successful refreshes and Umbrella backfill steps
 
 ### Environment variables and secrets
 
@@ -281,7 +286,7 @@ The data from all sources only changes daily/weekly. Without caching, every visi
 
 ### How it works
 
-1. **Cron worker** runs 1x/day at 06:00 UTC, fetches all data, writes to KV
+1. **Cron worker** runs a full refresh at 06:00 UTC and an Umbrella-only backfill at 09:00, 13:00, 17:00, and 21:00 UTC
 2. **API route** always tries KV first (cache hit = ~1ms response)
 3. **Fallback**: if KV is empty (first deploy, cache expired), the API route fetches live, saves to KV, then returns
 4. **Browser-side**: `Cache-Control: public, max-age=3600` header so browsers cache the response for 1 hour
