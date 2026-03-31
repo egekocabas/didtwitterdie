@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import type { ApiResponse } from "../types";
+import type { ApiResponse } from "@/types";
 
 interface UseDataResult {
   data: ApiResponse | null;
@@ -20,7 +20,7 @@ export function useData(): UseDataResult {
       })
       .then((d) => setData(d))
       .catch(() => {
-        return import("../utils/mockData.json").then((mod) =>
+        return import("@/utils/mockData.json").then((mod) =>
           setData(mod.default as ApiResponse)
         );
       })

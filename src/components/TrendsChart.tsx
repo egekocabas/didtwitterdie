@@ -1,4 +1,4 @@
-import ChartWrapper from "./ChartWrapper";
+import ChartWrapper from "@/components/ChartWrapper";
 
 const TRENDS_EMBED_URL =
   "https://trends.google.com/trends/embed/explore/TIMESERIES?" +

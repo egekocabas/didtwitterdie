@@ -1,8 +1,39 @@
 import type { Env } from "../types";
-import type { RankEntry, RadarData, TrancoData, ApiResponse } from "../../src/types";
+import type {
+  RankEntry,
+  RadarData,
+  RadarServicesData,
+  TrancoData,
+  ApiResponse,
+  UmbrellaData,
+  MajesticData,
+  WikipediaData,
+} from "@/types";
+import {
+  appendDomainRanks,
+  backfillArchiveRanks,
+  createMajesticData,
+  createRadarServicesData,
+  createUmbrellaData,
+  extractSingleZipEntryText,
+  getQuarterlyBackfillDates,
+  mergeHistory,
+  parseMajesticCsv,
+  parseUmbrellaCsv,
+  parseWikipediaPageviews,
+  toIsoDate,
+} from "../lib/comparisonData";
 
 const RADAR_BASE = "https://api.cloudflare.com/client/v4/radar/ranking";
 const TRANCO_BASE = "https://tranco-list.eu/api/ranks/domain";
+const UMBRELLA_CURRENT_URL = "https://s3-us-west-1.amazonaws.com/umbrella-static/top-1m.csv.zip";
+const UMBRELLA_ARCHIVE_URL = "https://s3-us-west-1.amazonaws.com/umbrella-static/top-1m-";
+const MAJESTIC_URL = "https://downloads.majestic.com/majestic_million.csv";
+const WIKIMEDIA_BASE = "https://wikimedia.org/api/rest_v1/metrics/pageviews/per-article";
+const WIKIMEDIA_RANGE_START = "2022010100";
+const RADAR_SOCIAL_CATEGORY = "Social Media";
+const RADAR_SERVICE_NAME = "X / Twitter";
+const UMBRELLA_BACKFILL_START = "2024-03-31";
 
 const TRANCO_SEED: TrancoData = {
   twitter: [
@@ -45,8 +76,7 @@ const RESPONSE_HEADERS: Record<string, string> = {
 };
 
 async function fetchRadarData(env: Env): Promise<RadarData> {
-  const token = env.CLOUDFLARE_RADAR_TOKEN;
-  const headers = { Authorization: `Bearer ${token}` };
+  const headers = createRadarHeaders(env);
 
   const [twitterRes, xRes] = await Promise.all([
     fetch(`${RADAR_BASE}/domain/twitter.com`, { headers }),
@@ -58,8 +88,8 @@ async function fetchRadarData(env: Env): Promise<RadarData> {
   }
 
   const [twitterJson, xJson] = await Promise.all([
-    twitterRes.json() as Promise<Record<string, unknown>>,
-    xRes.json() as Promise<Record<string, unknown>>,
+    parseJsonObject(twitterRes),
+    parseJsonObject(xRes),
   ]);
 
   const twitterResult = twitterJson?.result as Record<string, unknown> | undefined;
@@ -73,54 +103,221 @@ async function fetchRadarData(env: Env): Promise<RadarData> {
   };
 }
 
+async function fetchRadarServicesData(env: Env): Promise<RadarServicesData> {
+  const headers = createRadarHeaders(env);
+  const topUrl = new URL(`${RADAR_BASE}/internet_services/top`);
+  topUrl.searchParams.set("serviceCategory", RADAR_SOCIAL_CATEGORY);
+  topUrl.searchParams.set("limit", "10");
+
+  const timeseriesUrl = new URL(`${RADAR_BASE}/internet_services/timeseries_groups`);
+  timeseriesUrl.searchParams.set("serviceCategory", RADAR_SOCIAL_CATEGORY);
+  timeseriesUrl.searchParams.set("limit", "10");
+  timeseriesUrl.searchParams.set("dateRange", "90d");
+
+  const [topRes, timeseriesRes] = await Promise.all([
+    fetch(topUrl, { headers }),
+    fetch(timeseriesUrl, { headers }),
+  ]);
+
+  if (!topRes.ok || !timeseriesRes.ok) {
+    throw new Error(`Radar services fetch failed: top=${topRes.status} timeseries=${timeseriesRes.status}`);
+  }
+
+  const [topJson, timeseriesJson] = await Promise.all([
+    parseJsonObject(topRes),
+    parseJsonObject(timeseriesRes),
+  ]);
+
+  const data = createRadarServicesData(topJson, timeseriesJson);
+
+  if (data.latestRank == null) {
+    throw new Error(`${RADAR_SERVICE_NAME} missing from Radar services response`);
+  }
+
+  return data;
+}
+
 async function fetchTrancoData(env: Env): Promise<TrancoData> {
-  // Fetch sequentially to avoid 429 rate limiting
   const twitterRes = await fetch(`${TRANCO_BASE}/twitter.com`);
   if (!twitterRes.ok) {
     throw new Error(`Tranco fetch failed: twitter=${twitterRes.status}`);
   }
-  const twitterJson = await twitterRes.json() as Record<string, unknown>;
+  const twitterJson = await parseJsonObject(twitterRes);
 
-  // Small delay between requests to respect rate limits
-  await new Promise((r) => setTimeout(r, 500));
+  await new Promise((resolve) => setTimeout(resolve, 500));
 
   const xRes = await fetch(`${TRANCO_BASE}/x.com`);
   if (!xRes.ok) {
     throw new Error(`Tranco fetch failed: x=${xRes.status}`);
   }
-  const xJson = await xRes.json() as Record<string, unknown>;
+  const xJson = await parseJsonObject(xRes);
 
-  // Tranco returns { "domain": "twitter.com", "ranks": [{ "date": "...", "rank": N }, ...] }
   const twitterRanks = (twitterJson?.ranks as RankEntry[]) ?? [];
   const xRanks = (xJson?.ranks as RankEntry[]) ?? [];
-
-  // Read existing accumulated history from KV, falling back to seed data
   const existing = (await env.CACHE.get<TrancoData>("tranco_history", "json")) ?? TRANCO_SEED;
-
   const twitterHistory = mergeHistory(existing.twitter, twitterRanks);
   const xHistory = mergeHistory(existing.x, xRanks);
 
-  // Persist updated history back to KV (no TTL — this is the accumulation store)
   await env.CACHE.put("tranco_history", JSON.stringify({ twitter: twitterHistory, x: xHistory }));
 
   return { twitter: twitterHistory, x: xHistory };
 }
 
-// Merge new entries into existing history, deduplicating by date
-function mergeHistory(existing: RankEntry[], incoming: RankEntry[]): RankEntry[] {
-  const map = new Map<string, number>(existing.map((d) => [d.date, d.rank]));
-  for (const entry of incoming) {
-    const date = (entry.date as string | undefined) ?? (entry as unknown as Record<string, string>).listed_date;
-    const rank = entry.rank;
-    if (date && rank != null) map.set(date, rank);
+async function fetchUmbrellaData(env: Env): Promise<UmbrellaData> {
+  const currentRes = await fetch(UMBRELLA_CURRENT_URL);
+  if (!currentRes.ok) {
+    throw new Error(`Umbrella fetch failed: current=${currentRes.status}`);
   }
-  return Array.from(map.entries())
-    .map(([date, rank]) => ({ date, rank }))
-    .sort((a, b) => (a.date < b.date ? -1 : 1));
+
+  const currentText = await extractSingleZipEntryText(await currentRes.arrayBuffer());
+  const currentRanks = parseUmbrellaCsv(currentText);
+  const asOf = toIsoDate(currentRes.headers.get("last-modified"));
+  const existing =
+    (await env.CACHE.get<UmbrellaData>("umbrella_history", "json")) ??
+    createUmbrellaData({ twitter: [], x: [] }, null);
+
+  let history = {
+    twitter: existing.twitter,
+    x: existing.x,
+  };
+
+  const missingQuarterlies = getQuarterlyBackfillDates(UMBRELLA_BACKFILL_START, asOf).filter(
+    (date) =>
+      !history.twitter.some((entry) => entry.date === date) ||
+      !history.x.some((entry) => entry.date === date),
+  );
+
+  let historyLagDays: number | undefined;
+
+  if (missingQuarterlies.length > 0) {
+    const backfill = await backfillArchiveRanks(
+      history,
+      missingQuarterlies,
+      async (date) => {
+        const archiveRes = await fetch(`${UMBRELLA_ARCHIVE_URL}${date}.csv.zip`);
+
+        if (archiveRes.status === 404) {
+          return { status: 404 };
+        }
+
+        if (!archiveRes.ok) {
+          return { status: archiveRes.status };
+        }
+
+        return {
+          status: archiveRes.status,
+          text: await extractSingleZipEntryText(await archiveRes.arrayBuffer()),
+        };
+      },
+      parseUmbrellaCsv,
+    );
+
+    history = {
+      twitter: backfill.twitter,
+      x: backfill.x,
+    };
+
+    if (backfill.stoppedAt404 && backfill.lastSuccessfulDate) {
+      historyLagDays = daysBetween(backfill.lastSuccessfulDate, asOf);
+    }
+  }
+
+  history = appendDomainRanks(history, asOf, currentRanks);
+
+  const data = createUmbrellaData(history, asOf, historyLagDays);
+  await env.CACHE.put("umbrella_history", JSON.stringify(data));
+  return data;
+}
+
+async function fetchMajesticData(env: Env): Promise<MajesticData> {
+  const res = await fetch(MAJESTIC_URL);
+  if (!res.ok) {
+    throw new Error(`Majestic fetch failed: ${res.status}`);
+  }
+
+  const text = await res.text();
+  const ranks = parseMajesticCsv(text);
+  const asOf = toIsoDate(res.headers.get("last-modified"));
+  const existing =
+    (await env.CACHE.get<MajesticData>("majestic_history", "json")) ??
+    createMajesticData({ twitter: [], x: [] }, null);
+
+  const history = appendDomainRanks(
+    {
+      twitter: existing.twitter,
+      x: existing.x,
+    },
+    asOf,
+    ranks,
+  );
+
+  const data = createMajesticData(history, asOf);
+  await env.CACHE.put("majestic_history", JSON.stringify(data));
+  return data;
+}
+
+async function fetchWikipediaData(): Promise<WikipediaData> {
+  const [twitterRes, xRes] = await Promise.all([
+    fetch(buildWikipediaUrl("Twitter")),
+    fetch(buildWikipediaUrl("X_(social_network)")),
+  ]);
+
+  if (!twitterRes.ok || !xRes.ok) {
+    throw new Error(`Wikipedia fetch failed: twitter=${twitterRes.status} x=${xRes.status}`);
+  }
+
+  const [twitterJson, xJson] = await Promise.all([
+    parseJsonObject(twitterRes),
+    parseJsonObject(xRes),
+  ]);
+
+  const twitter = parseWikipediaPageviews(twitterJson);
+  const x = parseWikipediaPageviews(xJson);
+  const asOf = [twitter.at(-1)?.date, x.at(-1)?.date]
+    .filter((value): value is string => Boolean(value))
+    .sort((a, b) => a.localeCompare(b))
+    .at(-1) ?? null;
+
+  return { twitter, x, asOf };
+}
+
+function createRadarHeaders(env: Env): Record<string, string> {
+  return {
+    Authorization: `Bearer ${env.CLOUDFLARE_RADAR_TOKEN}`,
+  };
+}
+
+async function parseJsonObject(response: Response): Promise<Record<string, unknown>> {
+  return await response.json() as Record<string, unknown>;
+}
+
+function buildWikipediaUrl(article: string): string {
+  return `${WIKIMEDIA_BASE}/en.wikipedia.org/all-access/all-agents/${article}/monthly/${WIKIMEDIA_RANGE_START}/${currentMonthStartTimestamp()}`;
+}
+
+function currentMonthStartTimestamp(): string {
+  const now = new Date();
+  const year = now.getUTCFullYear();
+  const month = String(now.getUTCMonth() + 1).padStart(2, "0");
+  return `${year}${month}0100`;
+}
+
+function daysBetween(fromDate: string, toDate: string): number {
+  const start = new Date(`${fromDate}T00:00:00Z`);
+  const end = new Date(`${toDate}T00:00:00Z`);
+  return Math.max(0, Math.round((end.getTime() - start.getTime()) / 86400000));
 }
 
 function jsonResponse(data: ApiResponse, status = 200): Response {
   return new Response(JSON.stringify(data), { status, headers: RESPONSE_HEADERS });
+}
+
+async function settle<T>(promise: Promise<T>): Promise<PromiseSettledResult<T>> {
+  try {
+    return { status: "fulfilled", value: await promise };
+  } catch (error) {
+    return { status: "rejected", reason: error };
+  }
 }
 
 export async function onRequestGet({
@@ -132,11 +329,8 @@ export async function onRequestGet({
 }): Promise<Response> {
   const url = new URL(request.url);
   const refreshToken = url.searchParams.get("refresh");
-  const forceRefresh =
-    refreshToken !== null &&
-    refreshToken === env.REFRESH_SECRET;
+  const forceRefresh = refreshToken !== null && refreshToken === env.REFRESH_SECRET;
 
-  // 1. Try KV cache first (skip if ?refresh=true)
   if (!forceRefresh) {
     const cached = await env.CACHE.get<ApiResponse>("all_data", "json");
     if (cached) {
@@ -144,40 +338,79 @@ export async function onRequestGet({
     }
   }
 
-  // 2. Cache miss — fetch live from all sources in parallel
   const errors: string[] = [];
   let radar: RadarData | null = null;
   let tranco: TrancoData | null = null;
+  let radarServices: RadarServicesData | null = null;
+  let umbrella: UmbrellaData | null = null;
+  let majestic: MajesticData | null = null;
+  let wikipedia: WikipediaData | null = null;
 
-  const [radarResult, trancoResult] = await Promise.allSettled([
-    fetchRadarData(env),
-    fetchTrancoData(env),
+  const [radarResult, trancoResult, radarServicesResult, wikipediaResult] = await Promise.all([
+    settle(fetchRadarData(env)),
+    settle(fetchTrancoData(env)),
+    settle(fetchRadarServicesData(env)),
+    settle(fetchWikipediaData()),
   ]);
+
+  const umbrellaResult = await settle(fetchUmbrellaData(env));
+  const majesticResult = await settle(fetchMajesticData(env));
 
   if (radarResult.status === "fulfilled") {
     radar = radarResult.value;
   } else {
-    errors.push(`radar: ${(radarResult.reason as Error)?.message ?? "unknown error"}`);
+    errors.push(`radar: ${getErrorMessage(radarResult.reason)}`);
   }
 
   if (trancoResult.status === "fulfilled") {
     tranco = trancoResult.value;
   } else {
-    errors.push(`tranco: ${(trancoResult.reason as Error)?.message ?? "unknown error"}`);
+    errors.push(`tranco: ${getErrorMessage(trancoResult.reason)}`);
+  }
+
+  if (radarServicesResult.status === "fulfilled") {
+    radarServices = radarServicesResult.value;
+  } else {
+    errors.push(`radarServices: ${getErrorMessage(radarServicesResult.reason)}`);
+  }
+
+  if (wikipediaResult.status === "fulfilled") {
+    wikipedia = wikipediaResult.value;
+  } else {
+    errors.push(`wikipedia: ${getErrorMessage(wikipediaResult.reason)}`);
+  }
+
+  if (umbrellaResult.status === "fulfilled") {
+    umbrella = umbrellaResult.value;
+  } else {
+    errors.push(`umbrella: ${getErrorMessage(umbrellaResult.reason)}`);
+  }
+
+  if (majesticResult.status === "fulfilled") {
+    majestic = majesticResult.value;
+  } else {
+    errors.push(`majestic: ${getErrorMessage(majesticResult.reason)}`);
   }
 
   const data: ApiResponse = {
     radar,
     trends: null,
     tranco,
+    radarServices,
+    umbrella,
+    majestic,
+    wikipedia,
     updated_at: Date.now(),
-    ...(errors.length > 0 && { errors }),
+    ...(errors.length > 0 ? { errors } : {}),
   };
 
-  // 3. Save to KV with 24hr TTL (only when we have at least some data)
-  if (radar ?? tranco) {
+  if (radar ?? tranco ?? radarServices ?? umbrella ?? majestic ?? wikipedia) {
     await env.CACHE.put("all_data", JSON.stringify(data), { expirationTtl: 86400 });
   }
 
   return jsonResponse(data);
+}
+
+function getErrorMessage(error: unknown): string {
+  return error instanceof Error ? error.message : "unknown error";
 }

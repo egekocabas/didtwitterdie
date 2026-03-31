@@ -1,29 +1,6 @@
-import ChartWrapper from "./ChartWrapper";
-import type { ApiResponse } from "../types";
-
-interface Verdict {
-  twitterRank: number;
-  xRank: number;
-  twitterWins: boolean;
-  alivePercent: number;
-  twitterBucket: string | null;
-  xBucket: string | null;
-}
-
-function computeVerdict(data: ApiResponse): Verdict | null {
-  const twitterRank = data?.tranco?.twitter?.at(-1)?.rank ?? null;
-  const xRank = data?.tranco?.x?.at(-1)?.rank ?? null;
-
-  if (twitterRank == null || xRank == null) return null;
-
-  const twitterWins = twitterRank < xRank;
-  const alivePercent = Math.round((1 - twitterRank / (twitterRank + xRank)) * 100);
-
-  const twitterBucket = data?.radar?.twitter?.bucket ?? null;
-  const xBucket = data?.radar?.x?.bucket ?? null;
-
-  return { twitterRank, xRank, twitterWins, alivePercent, twitterBucket, xBucket };
-}
+import ChartWrapper from "@/components/ChartWrapper";
+import type { ApiResponse } from "@/types";
+import { computeVerdict } from "@/utils/verdict";
 
 interface VerdictSectionProps {
   data: ApiResponse;
@@ -31,6 +8,11 @@ interface VerdictSectionProps {
 
 export default function VerdictSection({ data }: VerdictSectionProps) {
   const verdict = computeVerdict(data);
+  const serviceRank = data.radarServices?.latestRank ?? null;
+  const umbrellaTwitterRank = data.umbrella?.twitter?.at(-1)?.rank ?? null;
+  const umbrellaXRank = data.umbrella?.x?.at(-1)?.rank ?? null;
+  const majesticTwitterRank = data.majestic?.twitter?.at(-1)?.rank ?? null;
+  const majesticXRank = data.majestic?.x?.at(-1)?.rank ?? null;
 
   if (!verdict) {
     return (
@@ -42,7 +24,7 @@ export default function VerdictSection({ data }: VerdictSectionProps) {
     );
   }
 
-  const { twitterRank, xRank, twitterWins, alivePercent, twitterBucket, xBucket } = verdict;
+  const { twitterRank, xRank, twitterWins, twitterBucket, xBucket } = verdict;
 
   return (
     <ChartWrapper
@@ -52,10 +34,6 @@ export default function VerdictSection({ data }: VerdictSectionProps) {
       <div className="rounded-2xl border border-gray-200 dark:border-gray-700 p-8 text-center space-y-4">
         <p className="text-5xl font-bold">
           {twitterWins ? "🐦 Not dead yet." : "💀 X has won."}
-        </p>
-        <p className="text-2xl font-semibold text-gray-700 dark:text-gray-300">
-          Twitter is{" "}
-          <span className="text-[#1DA1F2]">{alivePercent}% alive</span>
         </p>
         <p className="text-sm text-gray-500 dark:text-gray-400">
           twitter.com ranks{" "}
@@ -71,13 +49,29 @@ export default function VerdictSection({ data }: VerdictSectionProps) {
             Cloudflare Radar DNS: twitter.com is in the Top {twitterBucket}, x.com only Top {xBucket}
           </p>
         )}
+        {serviceRank != null && (
+          <p className="text-xs text-gray-400 dark:text-gray-500">
+            Cloudflare’s broader social-media ranking places X / Twitter at #{serviceRank}, which reflects the overall service rather than just the two domains.
+          </p>
+        )}
+        {(umbrellaTwitterRank != null && umbrellaXRank != null) || (majesticTwitterRank != null && majesticXRank != null) ? (
+          <p className="text-xs text-gray-400 dark:text-gray-500">
+            Supporting domain signals:
+            {umbrellaTwitterRank != null && umbrellaXRank != null
+              ? ` Cisco Umbrella shows twitter.com #${umbrellaTwitterRank} vs x.com #${umbrellaXRank}.`
+              : ""}
+            {majesticTwitterRank != null && majesticXRank != null
+              ? ` Majestic shows twitter.com #${majesticTwitterRank} vs x.com #${majesticXRank}.`
+              : ""}
+          </p>
+        ) : null}
         <p className="text-xs text-gray-400 dark:text-gray-500 italic border-t border-gray-100 dark:border-gray-700 pt-4 mt-2">
           Ranks are based on aggregated DNS and web traffic signals from the Tranco List (Cloudflare
           DNS, Cisco Umbrella, Chrome UX, Majestic, Farsight). Note that twitter.com redirects to
           x.com, so traffic to both domains may partially overlap. &ldquo;% alive&rdquo; is a
-          relative comparison, not a scientific metric. Google Trends is shown as an embedded
-          chart only and not factored into this verdict — search interest for &ldquo;x&rdquo; and
-          &ldquo;x.com&rdquo; is too generic to isolate reliably, and API access is pending.
+          relative comparison, not a scientific metric. Google Trends and Wikipedia attention are
+          narrative context only, and the additional direct-rank sources are shown as supporting
+          evidence but are not yet weighted into the verdict formula.
         </p>
       </div>
     </ChartWrapper>

@@ -9,11 +9,11 @@ import {
   Legend,
   ResponsiveContainer,
 } from "recharts";
-import ChartWrapper from "./ChartWrapper";
-import TimeRangeSelector from "./TimeRangeSelector";
-import RebrandAnnotation from "./RebrandAnnotation";
-import { filterByRange } from "../utils/filterByRange";
-import type { TrancoData, TimeRange } from "../types";
+import ChartWrapper from "@/components/ChartWrapper";
+import TimeRangeSelector from "@/components/TimeRangeSelector";
+import RebrandAnnotation from "@/components/RebrandAnnotation";
+import { filterByRange } from "@/utils/filterByRange";
+import type { TrancoData, TimeRange } from "@/types";
 
 interface MergedRankEntry {
   date: string;
@@ -77,7 +77,10 @@ export default function RankingChart({ data }: RankingChartProps) {
             width={48}
           />
           <Tooltip
-            formatter={(value) => [`#${value}`, ""]}
+            formatter={(value, name) => [
+              `#${value}`,
+              name === "twitter" ? "twitter.com" : "x.com",
+            ]}
             labelFormatter={(label) => formatDate(String(label))}
             contentStyle={{
               backgroundColor: "var(--tooltip-bg)",

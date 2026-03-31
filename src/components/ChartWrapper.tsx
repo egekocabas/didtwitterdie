@@ -1,9 +1,10 @@
+import type { ReactNode } from "react";
 import { motion } from "framer-motion";
 
 interface ChartWrapperProps {
   title?: string;
-  description?: string;
-  children: React.ReactNode;
+  description?: ReactNode;
+  children: ReactNode;
 }
 
 export default function ChartWrapper({ title, description, children }: ChartWrapperProps) {

@@ -1,5 +1,5 @@
 import { motion } from "framer-motion";
-import type { RadarData, TrancoData } from "../types";
+import type { RadarData, TrancoData } from "@/types";
 
 interface HeroSectionProps {
   radar: RadarData | null;

@@ -1,13 +1,16 @@
 import { lazy, Suspense } from "react";
-import { useData } from "./hooks/useData";
-import Layout from "./components/Layout";
-import LoadingSkeleton from "./components/LoadingSkeleton";
-import Footer from "./components/Footer";
-import HeroSection from "./components/HeroSection";
+import { useData } from "@/hooks/useData";
+import Layout from "@/components/Layout";
+import LoadingSkeleton from "@/components/LoadingSkeleton";
+import Footer from "@/components/Footer";
+import HeroSection from "@/components/HeroSection";
 
-const TrendsChart = lazy(() => import("./components/TrendsChart"));
-const RankingChart = lazy(() => import("./components/RankingChart"));
-const VerdictSection = lazy(() => import("./components/VerdictSection"));
+const TrendsChart = lazy(() => import("@/components/TrendsChart"));
+const RankingChart = lazy(() => import("@/components/RankingChart"));
+const SocialMediaServiceSection = lazy(() => import("@/components/SocialMediaServiceSection"));
+const WikipediaAttentionSection = lazy(() => import("@/components/WikipediaAttentionSection"));
+const DirectRankSignalsSection = lazy(() => import("@/components/DirectRankSignalsSection"));
+const VerdictSection = lazy(() => import("@/components/VerdictSection"));
 
 interface ErrorStateProps {
   message: string;
@@ -50,6 +53,9 @@ function App() {
         <Suspense fallback={<LoadingSkeleton />}>
           <RankingChart data={data.tranco} />
           <TrendsChart />
+          <WikipediaAttentionSection data={data.wikipedia} />
+          <DirectRankSignalsSection umbrella={data.umbrella} majestic={data.majestic} />
+          <SocialMediaServiceSection data={data.radarServices} />
           <VerdictSection data={data} />
         </Suspense>
         <Footer updatedAt={data.updated_at} />

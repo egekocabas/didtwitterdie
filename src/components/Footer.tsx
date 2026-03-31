@@ -34,7 +34,45 @@ export default function Footer({ updatedAt }: FooterProps) {
         >
           Tranco List
         </a>{" "}
-        (
+        ,{" "}
+        <a
+          href="https://umbrella-static.s3-us-west-1.amazonaws.com/index.html"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="underline hover:text-gray-700 dark:hover:text-gray-300"
+        >
+          Cisco Umbrella
+        </a>{" "}
+        ,{" "}
+        <a
+          href="https://majestic.com/reports/majestic-million"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="underline hover:text-gray-700 dark:hover:text-gray-300"
+        >
+          Majestic Million
+        </a>{" "}
+        ,{" "}
+        <a
+          href="https://doc.wikimedia.org/generated-data-platform/aqs/analytics-api/documentation/"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="underline hover:text-gray-700 dark:hover:text-gray-300"
+        >
+          Wikimedia Pageviews
+        </a>{" "}
+        and{" "}
+        <a
+          href="https://trends.google.com"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="underline hover:text-gray-700 dark:hover:text-gray-300"
+        >
+          Google Trends
+        </a>{" "}
+      </p>
+      <p>
+        Tranco citation:{" "}
         <a
           href="https://doi.org/10.14722/ndss.2019.23386"
           target="_blank"
@@ -43,7 +81,6 @@ export default function Footer({ updatedAt }: FooterProps) {
         >
           Le Pochat et al., NDSS 2019
         </a>
-        )
       </p>
       <p>
         Cloudflare Radar data licensed under{" "}

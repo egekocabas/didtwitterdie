@@ -1,4 +1,4 @@
-import type { TimeRange } from "../types";
+import type { TimeRange } from "@/types";
 
 const RANGES: TimeRange[] = ["1M", "6M", "1Y", "3Y", "ALL"];
 

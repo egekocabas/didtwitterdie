@@ -15,7 +15,9 @@
     "noEmit": true,
     "baseUrl": ".",
     "paths": {
-      "@/*": ["src/*"]
+      "@/*": ["src/*"],
+      "#src/*": ["src/*"],
+      "#functions/*": ["functions/*"]
     }
   },
   "include": ["src", "functions"],
