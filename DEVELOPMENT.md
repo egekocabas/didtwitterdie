@@ -910,10 +910,15 @@ id = "<your-kv-namespace-id>"
 - [x] "Last updated" timestamp in footer
 
 ### Phase 8: SEO & Social Sharing
-- [ ] OG meta tags in `index.html` (title, description, image)
+- [x] OG meta tags in `index.html` (title, description, image)
+- [x] Proper `<title>` and `<meta description>`
+- [x] Favicon
+- [x] Twitter Card meta tags
+- [x] `robots.txt` — allows all crawlers, references sitemap
+- [x] `sitemap.xml` — single URL entry, `changefreq: daily`
+- [x] Canonical URL tag
+- [x] JSON-LD structured data (`WebSite` schema)
 - [ ] Consider dynamic OG image generation showing current verdict
-- [ ] Proper `<title>` and `<meta description>`
-- [ ] Favicon
 
 ### Phase 9: Nice-to-haves (post-launch)
 - [x] Add Google Trends integration — implemented as embedded widget (Phase 5.5)
