@@ -1,1 +1,1 @@
-See DEVELOPMENT.md.
+AGENTS.md
