@@ -17,6 +17,8 @@ import {
   createUmbrellaData,
   extractSingleZipEntryText,
   getQuarterlyBackfillDates,
+  getNextMissingBackfillDate,
+  getLatestBackfilledQuarterDate,
   mergeHistory,
   parseMajesticCsv,
   parseUmbrellaCsv,
@@ -29,6 +31,7 @@ const TRANCO_BASE = "https://tranco-list.eu/api/ranks/domain";
 const UMBRELLA_CURRENT_URL = "https://s3-us-west-1.amazonaws.com/umbrella-static/top-1m.csv.zip";
 const UMBRELLA_ARCHIVE_URL = "https://s3-us-west-1.amazonaws.com/umbrella-static/top-1m-";
 const MAJESTIC_URL = "https://downloads.majestic.com/majestic_million.csv";
+const MAJESTIC_RANGE_BYTES = 2 * 1024 * 1024;
 const WIKIMEDIA_BASE = "https://wikimedia.org/api/rest_v1/metrics/pageviews/per-article";
 const WIKIMEDIA_RANGE_START = "2022010100";
 const RADAR_SOCIAL_CATEGORY = "Social Media";
@@ -181,18 +184,13 @@ async function fetchUmbrellaData(env: Env): Promise<UmbrellaData> {
     x: existing.x,
   };
 
-  const missingQuarterlies = getQuarterlyBackfillDates(UMBRELLA_BACKFILL_START, asOf).filter(
-    (date) =>
-      !history.twitter.some((entry) => entry.date === date) ||
-      !history.x.some((entry) => entry.date === date),
-  );
+  const quarterlyDates = getQuarterlyBackfillDates(UMBRELLA_BACKFILL_START, asOf);
+  const nextBackfillDate = getNextMissingBackfillDate(quarterlyDates, history);
 
-  let historyLagDays: number | undefined;
-
-  if (missingQuarterlies.length > 0) {
+  if (nextBackfillDate) {
     const backfill = await backfillArchiveRanks(
       history,
-      missingQuarterlies,
+      [nextBackfillDate],
       async (date) => {
         const archiveRes = await fetch(`${UMBRELLA_ARCHIVE_URL}${date}.csv.zip`);
 
@@ -216,13 +214,14 @@ async function fetchUmbrellaData(env: Env): Promise<UmbrellaData> {
       twitter: backfill.twitter,
       x: backfill.x,
     };
-
-    if (backfill.stoppedAt404 && backfill.lastSuccessfulDate) {
-      historyLagDays = daysBetween(backfill.lastSuccessfulDate, asOf);
-    }
   }
 
   history = appendDomainRanks(history, asOf, currentRanks);
+  const latestBackfilledQuarterDate = getLatestBackfilledQuarterDate(quarterlyDates, history);
+  const historyLagDays =
+    latestBackfilledQuarterDate != null
+      ? daysBetween(latestBackfilledQuarterDate, asOf)
+      : undefined;
 
   const data = createUmbrellaData(history, asOf, historyLagDays);
   await env.CACHE.put("umbrella_history", JSON.stringify(data));
@@ -230,14 +229,7 @@ async function fetchUmbrellaData(env: Env): Promise<UmbrellaData> {
 }
 
 async function fetchMajesticData(env: Env): Promise<MajesticData> {
-  const res = await fetch(MAJESTIC_URL);
-  if (!res.ok) {
-    throw new Error(`Majestic fetch failed: ${res.status}`);
-  }
-
-  const text = await res.text();
-  const ranks = parseMajesticCsv(text);
-  const asOf = toIsoDate(res.headers.get("last-modified"));
+  const { ranks, asOf } = await fetchMajesticCurrentRanks();
   const existing =
     (await env.CACHE.get<MajesticData>("majestic_history", "json")) ??
     createMajesticData({ twitter: [], x: [] }, null);
@@ -289,6 +281,47 @@ function createRadarHeaders(env: Env): Record<string, string> {
 
 async function parseJsonObject(response: Response): Promise<Record<string, unknown>> {
   return await response.json() as Record<string, unknown>;
+}
+
+async function fetchMajesticCurrentRanks(): Promise<{
+  ranks: {
+    twitter: number | null;
+    x: number | null;
+  };
+  asOf: string;
+}> {
+  const partialRes = await fetch(MAJESTIC_URL, {
+    headers: {
+      Range: `bytes=0-${MAJESTIC_RANGE_BYTES - 1}`,
+    },
+  });
+
+  if (!partialRes.ok) {
+    throw new Error(`Majestic fetch failed: ${partialRes.status}`);
+  }
+
+  const partialText = await partialRes.text();
+  const partialRanks = parseMajesticCsv(partialText);
+  const partialAsOf = toIsoDate(partialRes.headers.get("last-modified"));
+
+  if (partialRanks.twitter != null && partialRanks.x != null) {
+    return { ranks: partialRanks, asOf: partialAsOf };
+  }
+
+  if (partialRes.status !== 206) {
+    return { ranks: partialRanks, asOf: partialAsOf };
+  }
+
+  const fullRes = await fetch(MAJESTIC_URL);
+  if (!fullRes.ok) {
+    throw new Error(`Majestic fallback fetch failed: ${fullRes.status}`);
+  }
+
+  const fullText = await fullRes.text();
+  return {
+    ranks: parseMajesticCsv(fullText),
+    asOf: toIsoDate(fullRes.headers.get("last-modified")),
+  };
 }
 
 function buildWikipediaUrl(article: string): string {

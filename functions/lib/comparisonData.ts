@@ -284,6 +284,39 @@ export function getQuarterlyBackfillDates(
   return dates.sort((a, b) => a.localeCompare(b));
 }
 
+export function getNextMissingBackfillDate(
+  candidates: string[],
+  history: DomainRankHistory,
+): string | null {
+  const twitterDates = new Set(history.twitter.map((entry) => entry.date));
+  const xDates = new Set(history.x.map((entry) => entry.date));
+
+  for (const date of candidates) {
+    if (!twitterDates.has(date) || !xDates.has(date)) {
+      return date;
+    }
+  }
+
+  return null;
+}
+
+export function getLatestBackfilledQuarterDate(
+  candidates: string[],
+  history: DomainRankHistory,
+): string | null {
+  const twitterDates = new Set(history.twitter.map((entry) => entry.date));
+  const xDates = new Set(history.x.map((entry) => entry.date));
+
+  for (let index = candidates.length - 1; index >= 0; index -= 1) {
+    const date = candidates[index];
+    if (date && twitterDates.has(date) && xDates.has(date)) {
+      return date;
+    }
+  }
+
+  return null;
+}
+
 export function createRadarServicesData(
   topPayload: Record<string, unknown>,
   timeseriesPayload: Record<string, unknown>,

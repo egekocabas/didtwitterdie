@@ -6,6 +6,8 @@ import {
   backfillArchiveRanks,
   createRadarServicesData,
   extractSingleZipEntryText,
+  getLatestBackfilledQuarterDate,
+  getNextMissingBackfillDate,
   parseMajesticCsv,
   parseUmbrellaCsv,
 } from "#functions/lib/comparisonData";
@@ -107,6 +109,23 @@ test("archive backfill stops cleanly on Cisco 404s", async () => {
   assert.equal(result.stoppedAt404, "2026-03-31");
   assert.deepEqual(result.twitter, [{ date: "2025-12-31", rank: 532 }]);
   assert.deepEqual(result.x, [{ date: "2025-12-31", rank: 2415 }]);
+});
+
+test("incremental Umbrella backfill picks the oldest missing quarter first", () => {
+  const quarterlyDates = ["2024-03-31", "2024-06-30", "2024-09-30", "2024-12-31"];
+  const history = {
+    twitter: [
+      { date: "2024-03-31", rank: 700 },
+      { date: "2024-12-31", rank: 532 },
+    ],
+    x: [
+      { date: "2024-03-31", rank: 4200 },
+      { date: "2024-12-31", rank: 2415 },
+    ],
+  };
+
+  assert.equal(getNextMissingBackfillDate(quarterlyDates, history), "2024-06-30");
+  assert.equal(getLatestBackfilledQuarterDate(quarterlyDates, history), "2024-12-31");
 });
 
 test("the legacy verdict still works when new API fields are null", () => {
