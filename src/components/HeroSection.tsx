@@ -1,5 +1,6 @@
 import { motion } from "framer-motion";
 import type { RadarData, TrancoData } from "@/types";
+import { useCountUp } from "@/hooks/useCountUp";
 
 interface HeroSectionProps {
   radar: RadarData | null;
@@ -11,6 +12,9 @@ export default function HeroSection({ radar, tranco }: HeroSectionProps) {
   const xRank = tranco?.x?.at(-1)?.rank ?? null;
   const twitterBucket = radar?.twitter?.bucket ?? null;
   const xBucket = radar?.x?.bucket ?? null;
+
+  const twitterCount = useCountUp(twitterRank);
+  const xCount = useCountUp(xRank);
 
   return (
     <motion.header
@@ -30,7 +34,7 @@ export default function HeroSection({ radar, tranco }: HeroSectionProps) {
       <div className="flex justify-center gap-8 sm:gap-16 flex-wrap">
         <div className="space-y-2">
           <p className="text-5xl sm:text-7xl font-bold text-[#1DA1F2]">
-            {twitterRank != null ? `#${twitterRank}` : "—"}
+            {twitterCount != null ? `#${twitterCount}` : "—"}
           </p>
           <p className="text-sm text-gray-500 dark:text-gray-400">twitter.com rank</p>
           {twitterBucket && (
@@ -41,7 +45,7 @@ export default function HeroSection({ radar, tranco }: HeroSectionProps) {
         </div>
         <div className="space-y-2">
           <p className="text-5xl sm:text-7xl font-bold text-gray-900 dark:text-gray-100">
-            {xRank != null ? `#${xRank}` : "—"}
+            {xCount != null ? `#${xCount}` : "—"}
           </p>
           <p className="text-sm text-gray-500 dark:text-gray-400">x.com rank</p>
           {xBucket && (
