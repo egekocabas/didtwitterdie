@@ -56,8 +56,7 @@ export default function RankingChart({ data }: RankingChartProps) {
       title="Domain popularity over time"
       description={
         <>
-          Combined ranking from Cloudflare DNS, Cisco Umbrella, Chrome UX, Majestic, and Farsight
-          passive DNS via the{" "}
+          Aggregated domain ranking via the{" "}
           <a
             href="https://tranco-list.eu"
             target="_blank"

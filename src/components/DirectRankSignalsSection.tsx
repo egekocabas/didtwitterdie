@@ -42,12 +42,12 @@ export default function DirectRankSignalsSection({
   return (
     <ChartWrapper
       title="Direct rank signals"
-      description="These are standalone domain-level comparisons, shown separately from Tranco so you can see the raw signals that feed broader popularity rankings."
+      description="Raw domain-level signals, shown separately from the aggregated Tranco ranking."
     >
       <div className="grid gap-6 lg:grid-cols-2">
         <RankSourceCard
           title="Cisco Umbrella"
-          description="Daily DNS popularity across Cisco Umbrella's network, with best-effort quarterly archive backfill."
+          description="DNS popularity via Cisco Umbrella."
           attributionNote="Source: Cisco Umbrella Popularity List. The public list page reviewed did not state an explicit dataset license, so this site shows only narrow comparative excerpts."
           data={umbrella}
           sourceHref="https://umbrella-static.s3-us-west-1.amazonaws.com/index.html"
@@ -55,7 +55,7 @@ export default function DirectRankSignalsSection({
         />
         <RankSourceCard
           title="Majestic Million"
-          description="Backlink and web-graph popularity from Majestic's free million-domain list."
+          description="Backlink-based ranking from Majestic."
           attributionNote="Source: Majestic Million. The dataset page advertises CC BY 3.0, while Majestic's broader site guidance still cautions against reseller-like reuse."
           data={majestic}
           sourceHref="https://majestic.com/reports/majestic-million"

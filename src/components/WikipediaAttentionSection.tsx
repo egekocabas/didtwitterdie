@@ -36,7 +36,7 @@ export default function WikipediaAttentionSection({ data }: WikipediaAttentionSe
       title="Brand attention on Wikipedia"
       description={
         <>
-          English Wikipedia pageviews for the{" "}
+          Pageviews for the{" "}
           <a
             href="https://en.wikipedia.org/wiki/Twitter"
             target="_blank"
@@ -54,7 +54,7 @@ export default function WikipediaAttentionSection({ data }: WikipediaAttentionSe
           >
             X
           </a>{" "}
-          articles. This is public attention data, not direct domain usage.
+          Wikipedia articles.
         </>
       }
     >

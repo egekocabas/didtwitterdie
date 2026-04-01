@@ -31,7 +31,7 @@ export default function SocialMediaServiceSection({ data }: SocialMediaServiceSe
   return (
     <ChartWrapper
       title="X / Twitter social rank"
-      description="Cloudflare Radar tracks X / Twitter as a broader social service, not just the twitter.com and x.com domains."
+      description="Service-level ranking from Cloudflare Radar, not individual domains."
     >
       <div className="space-y-3">
         <p className="text-xs text-gray-400 dark:text-gray-500">Lower rank = more popular.</p>

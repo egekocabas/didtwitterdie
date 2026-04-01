@@ -23,7 +23,7 @@ export default function TrendsChart() {
   return (
     <ChartWrapper
       title="What people Google"
-      description='Google search interest for "twitter", "x.com", and "x" over time. Values are relative (0–100), not absolute search volume.'
+      description="Relative search interest, not absolute volume."
     >
       <div className="rounded-xl overflow-hidden border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900">
         <iframe
