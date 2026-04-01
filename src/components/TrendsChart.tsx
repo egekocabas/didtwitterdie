@@ -16,6 +16,9 @@ const TRENDS_EMBED_URL =
   ) +
   "&tz=0";
 
+const TRENDS_PAGE_URL =
+  "https://trends.google.com/trends/explore?date=2022-01-01%202026-12-31&q=twitter,x.com,x";
+
 export default function TrendsChart() {
   return (
     <ChartWrapper
@@ -33,17 +36,17 @@ export default function TrendsChart() {
           className="dark:[filter:invert(1)_hue-rotate(180deg)]"
         />
       </div>
-      <p className="mt-2 text-center text-xs text-gray-400 dark:text-gray-500">
-        Data source:{" "}
+      <p className="text-center text-sm text-gray-500 dark:text-gray-400 sm:hidden">
+        If the Google Trends chart does not display on your device,{" "}
         <a
-          href="https://trends.google.com"
+          href={TRENDS_PAGE_URL}
           target="_blank"
           rel="noopener noreferrer"
-          className="underline hover:text-gray-600 dark:hover:text-gray-300"
+          className="underline hover:text-gray-700 dark:hover:text-gray-200"
         >
-          Google Trends
+          open the live chart directly
         </a>
-        . Official embed; Google terms apply.
+        .
       </p>
     </ChartWrapper>
   );
