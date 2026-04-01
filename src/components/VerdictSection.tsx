@@ -1,4 +1,5 @@
 import ChartWrapper from "@/components/ChartWrapper";
+import EcgLine from "@/components/EcgLine";
 import type { ApiResponse } from "@/types";
 import { computeVerdict } from "@/utils/verdict";
 
@@ -35,6 +36,7 @@ export default function VerdictSection({ data }: VerdictSectionProps) {
         <p className="text-5xl font-bold">
           {twitterWins ? "🐦 Not dead yet." : "💀 X has won."}
         </p>
+        <EcgLine alive={twitterWins} />
         <p className="text-sm text-gray-500 dark:text-gray-400">
           twitter.com ranks{" "}
           <span className="font-semibold text-[#1DA1F2]">#{twitterRank}</span> vs x.com at{" "}
