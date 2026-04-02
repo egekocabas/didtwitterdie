@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import GitHubStars from "@/components/GitHubStars";
 
 function getInitialDark(): boolean {
   const stored = localStorage.getItem("theme");
@@ -24,7 +25,8 @@ export default function Layout({ children }: LayoutProps) {
 
   return (
     <div className="min-h-screen bg-white dark:bg-gray-950 text-gray-900 dark:text-gray-100 transition-colors">
-      <div className="fixed top-4 right-4 z-50">
+      <div className="fixed top-4 right-4 z-50 flex items-center gap-2">
+        <GitHubStars />
         <button
           onClick={() => setDark(!dark)}
           className="p-2 rounded-lg bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors"
