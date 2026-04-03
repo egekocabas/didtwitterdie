@@ -15,9 +15,9 @@ interface ConnectorGeometry {
 }
 
 const MAX_PUDDLE_STAGE = 5;
-const INITIAL_DROP_DELAY_MS = 700;
-const DROP_TRAVEL_MS = 1450;
-const LOOP_PAUSE_MS = 2500;
+const INITIAL_DROP_DELAY_MS = 600;
+const DROP_TRAVEL_MS = 1300;
+const LOOP_PAUSE_MS = 2000;
 const PUDDLE_IMPACT_Y = 50 / 90;
 const PUDDLE_STAGES = [
   {
@@ -63,9 +63,23 @@ const PUDDLE_STAGES = [
     sheenOpacity: 0.3,
   },
   {
+    shadowRx: 68,
+    shadowRy: 12.1,
+    shadowOpacity: 0.21,
+    baseRx: 68,
+    baseRy: 10.9,
+    baseOpacity: 0.95,
+    innerRx: 51,
+    innerRy: 8.4,
+    innerOpacity: 0.83,
+    sheenRx: 24,
+    sheenRy: 3.1,
+    sheenOpacity: 0.35,
+  },
+  {
     shadowRx: 92,
     shadowRy: 16.4,
-    shadowOpacity: 0.23,
+    shadowOpacity: 0.24,
     baseRx: 92,
     baseRy: 14.8,
     baseOpacity: 0.97,
@@ -75,20 +89,6 @@ const PUDDLE_STAGES = [
     sheenRx: 36,
     sheenRy: 4.5,
     sheenOpacity: 0.39,
-  },
-  {
-    shadowRx: 104,
-    shadowRy: 18.5,
-    shadowOpacity: 0.24,
-    baseRx: 104,
-    baseRy: 16.7,
-    baseOpacity: 0.98,
-    innerRx: 79,
-    innerRy: 12.8,
-    innerOpacity: 0.88,
-    sheenRx: 42,
-    sheenRy: 5.1,
-    sheenOpacity: 0.41,
   },
   {
     shadowRx: 116,
