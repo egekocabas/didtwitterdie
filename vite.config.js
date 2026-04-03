@@ -24,9 +24,20 @@ function resolveBuildSha() {
   }
 }
 
+function resolveBuildTime() {
+  const envBuildTime = process.env.VITE_BUILD_TIME
+
+  if (envBuildTime) {
+    return envBuildTime.trim()
+  }
+
+  return new Date().toISOString()
+}
+
 export default defineConfig({
   define: {
     __BUILD_SHA__: JSON.stringify(resolveBuildSha()),
+    __BUILD_TIME__: JSON.stringify(resolveBuildTime()),
     __REPOSITORY_URL__: JSON.stringify(repositoryUrl),
   },
   plugins: [react(), tailwindcss()],
