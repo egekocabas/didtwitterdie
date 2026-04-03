@@ -15,7 +15,7 @@ export default function TimeRangeSelector({ value, onChange }: TimeRangeSelector
           key={range}
           onClick={() => onChange(range)}
           aria-pressed={value === range}
-          className={`px-3 py-1 text-sm rounded-lg transition-colors ${
+          className={`px-3 py-1 text-sm rounded-lg transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2 focus-visible:ring-offset-white dark:focus-visible:ring-offset-gray-950 ${
             value === range
               ? "bg-blue-100 text-blue-700 dark:bg-blue-900 dark:text-blue-300"
               : "text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800"

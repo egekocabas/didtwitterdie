@@ -3,6 +3,8 @@
   <head>
     <meta charset="UTF-8" />
     <link rel="icon" type="image/svg+xml" href="/icon.svg" />
+    <link rel="preconnect" href="https://trends.google.com" crossorigin />
+    <link rel="dns-prefetch" href="https://trends.google.com" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta name="color-scheme" content="light dark" />
     <meta name="theme-color" content="#ffffff" />
@@ -20,6 +22,7 @@
     </script>
     <title>Did Twitter Die?</title>
     <meta name="description" content="Real data comparing twitter.com vs x.com popularity — DNS queries, search interest, and domain rankings since the July 2023 rebrand." />
+    <meta name="robots" content="index, follow, max-image-preview:large, max-snippet:-1, max-video-preview:-1" />
     <link rel="canonical" href="https://didtwitterdie.com/" />
 
     <!-- Structured data -->
@@ -27,10 +30,19 @@
     [
       {
         "@context": "https://schema.org",
+        "@type": "Organization",
+        "name": "Did Twitter Die?",
+        "url": "https://didtwitterdie.com/",
+        "logo": "https://didtwitterdie.com/icon.svg",
+        "sameAs": "https://github.com/egekocabas/didtwitterdie"
+      },
+      {
+        "@context": "https://schema.org",
         "@type": "WebSite",
         "name": "Did Twitter Die?",
         "url": "https://didtwitterdie.com/",
-        "description": "Real data comparing twitter.com vs x.com popularity — DNS queries, search interest, and domain rankings since the July 2023 rebrand."
+        "description": "Real data comparing twitter.com vs x.com popularity — DNS queries, search interest, and domain rankings since the July 2023 rebrand.",
+        "image": "https://didtwitterdie.com/og-image.png"
       },
       {
         "@context": "https://schema.org",
@@ -46,6 +58,11 @@
         "temporalCoverage": "2022-09-01/..",
         "spatialCoverage": "Global",
         "license": "https://github.com/egekocabas/didtwitterdie/blob/main/LICENSE",
+        "distribution": {
+          "@type": "DataDownload",
+          "contentUrl": "https://didtwitterdie.com/api/data",
+          "encodingFormat": "application/json"
+        },
         "isAccessibleForFree": true
       }
     ]
@@ -53,16 +70,22 @@
 
     <!-- Open Graph -->
     <meta property="og:type" content="website" />
+    <meta property="og:locale" content="en_US" />
+    <meta property="og:site_name" content="Did Twitter Die?" />
     <meta property="og:url" content="https://didtwitterdie.com/" />
     <meta property="og:title" content="Did Twitter Die?" />
     <meta property="og:description" content="Real data comparing twitter.com vs x.com popularity since the July 2023 rebrand." />
     <meta property="og:image" content="https://didtwitterdie.com/og-image.png" />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
 
     <!-- Twitter Card -->
     <meta name="twitter:card" content="summary_large_image" />
     <meta name="twitter:title" content="Did Twitter Die?" />
     <meta name="twitter:description" content="Real data comparing twitter.com vs x.com popularity since the July 2023 rebrand." />
     <meta name="twitter:image" content="https://didtwitterdie.com/og-image.png" />
+    <meta property="og:image:type" content="image/png" />
+    <meta property="og:image:alt" content="Chart comparing Twitter vs X popularity over time" />
   </head>
   <body>
     <div id="root"></div>
@@ -82,7 +105,7 @@
         <h2>What people Google</h2>
         <p>Google Trends search interest for "twitter" vs "x.com" over time, showing whether people are still searching for Twitter by its original name.</p>
         <h2>The verdict</h2>
-        <p>Based on aggregated DNS and web traffic signals from the Tranco List and Cloudflare Radar, a live verdict on whether Twitter is dead or still alive relative to X.</p>
+        <p>Based on the latest Tranco ranking, with Cloudflare Radar shown separately as supporting DNS context, a live verdict on whether Twitter is dead or still alive relative to X.</p>
         <p>Data sources: Cloudflare Radar, Tranco List (Cloudflare DNS, Cisco Umbrella, Chrome UX, Majestic, Farsight), Google Trends.</p>
         <p>Please enable JavaScript to view the interactive charts and live data.</p>
       </div>

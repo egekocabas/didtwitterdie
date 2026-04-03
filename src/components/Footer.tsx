@@ -3,7 +3,7 @@ import GitHubIcon from "@/components/GitHubIcon";
 
 interface FooterProps {
   updatedAt?: number | null;
-  currentPage?: "dashboard" | "methodology" | "privacy";
+  currentPage?: "dashboard" | "methodology" | "privacy" | "not-found";
 }
 
 export default function Footer({ updatedAt, currentPage = "dashboard" }: FooterProps) {
@@ -38,7 +38,10 @@ export default function Footer({ updatedAt, currentPage = "dashboard" }: FooterP
             </a>
           )}
         </div>
-        <nav className="flex flex-wrap items-center justify-center gap-x-4 gap-y-2 sm:justify-end">
+        <nav
+          aria-label="Footer navigation"
+          className="flex flex-wrap items-center justify-center gap-x-4 gap-y-2 sm:justify-end"
+        >
           {currentPage !== "dashboard" && (
             <a
               href="/"

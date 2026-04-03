@@ -6,6 +6,7 @@ import LoadingSkeleton from "@/components/LoadingSkeleton";
 import Footer from "@/components/Footer";
 import HeroSection from "@/components/HeroSection";
 import MethodologyPage from "@/pages/MethodologyPage";
+import NotFoundPage from "@/pages/NotFoundPage";
 import PrivacyPage from "@/pages/PrivacyPage";
 
 const TrendsChart = lazy(() => import("@/components/TrendsChart"));
@@ -103,7 +104,11 @@ function App() {
     );
   }
 
-  return <DashboardPage />;
+  if (pathname === "/") {
+    return <DashboardPage />;
+  }
+
+  return <NotFoundPage />;
 }
 
 export default App;

@@ -1,14 +1,18 @@
 import ChartWrapper from "@/components/ChartWrapper";
 
+const TRENDS_START_DATE = "2022-01-01";
+const TRENDS_END_DATE = new Date().toISOString().slice(0, 10);
+const TRENDS_TIME_RANGE = `${TRENDS_START_DATE} ${TRENDS_END_DATE}`;
+
 const TRENDS_EMBED_URL =
   "https://trends.google.com/trends/embed/explore/TIMESERIES?" +
   "req=" +
   encodeURIComponent(
     JSON.stringify({
       comparisonItem: [
-        { keyword: "twitter", geo: "", time: "2022-01-01 2026-12-31" },
-        { keyword: "x.com", geo: "", time: "2022-01-01 2026-12-31" },
-        { keyword: "x", geo: "", time: "2022-01-01 2026-12-31" },
+        { keyword: "twitter", geo: "", time: TRENDS_TIME_RANGE },
+        { keyword: "x.com", geo: "", time: TRENDS_TIME_RANGE },
+        { keyword: "x", geo: "", time: TRENDS_TIME_RANGE },
       ],
       category: 0,
       property: "",
@@ -17,7 +21,7 @@ const TRENDS_EMBED_URL =
   "&tz=0";
 
 const TRENDS_PAGE_URL =
-  "https://trends.google.com/trends/explore?date=2022-01-01%202026-12-31&q=twitter,x.com,x";
+  `https://trends.google.com/trends/explore?date=${encodeURIComponent(TRENDS_TIME_RANGE)}&q=twitter,x.com,x`;
 
 export default function TrendsChart() {
   return (

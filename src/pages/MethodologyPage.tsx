@@ -14,7 +14,7 @@ const methodologyPoints = [
   {
     title: "What drives the verdict",
     text:
-      "The live verdict is intentionally narrow. It currently uses Tranco plus Cloudflare Radar's direct domain bucket signal. Everything else stays visible as supporting evidence instead of silently changing the score.",
+      "The live verdict is intentionally narrow. It currently uses the latest Tranco ranking, while Cloudflare Radar stays visible as supporting DNS context. Everything else remains visible as supporting evidence instead of silently changing the score.",
   },
   {
     title: "How reuse is handled",
@@ -45,7 +45,7 @@ const sourceCards: SourceCard[] = [
     sourceHref: "https://radar.cloudflare.com",
     policyHref: "https://radar.cloudflare.com/about",
     measure: "DNS popularity bucket for direct domain usage on Cloudflare's 1.1.1.1 resolver.",
-    role: "Primary verdict input and hero-level context.",
+    role: "Supporting DNS context and hero-level context.",
     terms:
       "Radar API data is available under CC BY-NC 4.0. Cloudflare's trademarks and branding are not covered by that license, so the site uses text references only and avoids implying endorsement.",
     caveat:

@@ -12,7 +12,10 @@ export default function VerdictSection({ data }: VerdictSectionProps) {
 
   if (!verdict) {
     return (
-      <ChartWrapper title="The verdict">
+      <ChartWrapper
+        title="The verdict"
+        description="Currently based on the latest Tranco rank comparison, with Radar shown separately above as supporting DNS context."
+      >
         <div className="rounded-2xl bg-gray-100 dark:bg-gray-800 p-8 text-center text-gray-400">
           Not enough data to compute a verdict.
         </div>
@@ -23,7 +26,10 @@ export default function VerdictSection({ data }: VerdictSectionProps) {
   const { twitterWins } = verdict;
 
   return (
-    <ChartWrapper title="The verdict">
+    <ChartWrapper
+      title="The verdict"
+      description="Currently based on the latest Tranco rank comparison, with Radar shown separately above as supporting DNS context."
+    >
       <div className="rounded-2xl border border-gray-200 dark:border-gray-700 p-8 text-center space-y-4">
         <p className="text-5xl font-bold">
           {twitterWins ? "🐦 Not dead yet." : "💀 X has won."}
