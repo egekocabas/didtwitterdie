@@ -37,16 +37,38 @@ function formatDate(dateStr: string): string {
   return d.toLocaleDateString("en-US", { month: "short", year: "numeric" });
 }
 
+function isRebrandMonth(label: string | number | undefined): boolean {
+  if (typeof label !== "string" && typeof label !== "number") {
+    return false;
+  }
+
+  const date = new Date(String(label));
+
+  if (Number.isNaN(date.getTime())) {
+    return false;
+  }
+
+  return date.getUTCFullYear() === 2023 && date.getUTCMonth() === 6;
+}
+
 interface RankingChartProps {
   data: TrancoData | null;
 }
 
+interface ChartHoverState {
+  activeLabel?: string | number;
+  isTooltipActive?: boolean;
+}
+
 export default function RankingChart({ data }: RankingChartProps) {
   const [range, setRange] = useState<TimeRange>("ALL");
+  const [isRebrandLineHovered, setIsRebrandLineHovered] = useState(false);
+  const [isRebrandPointHovered, setIsRebrandPointHovered] = useState(false);
 
   const twitterFiltered = filterByRange(data?.twitter ?? [], range);
   const xFiltered = filterByRange(data?.x ?? [], range);
   const merged = mergeByDate(twitterFiltered, xFiltered);
+  const showRebrandNote = isRebrandLineHovered || isRebrandPointHovered;
 
   const latestTwitter = data?.twitter?.at(-1);
   const latestX = data?.x?.at(-1);
@@ -73,7 +95,16 @@ export default function RankingChart({ data }: RankingChartProps) {
       <TimeRangeSelector value={range} onChange={setRange} />
 
       <ResponsiveContainer width="100%" height={300}>
-        <LineChart data={merged} margin={{ top: 8, right: 16, left: 0, bottom: 0 }}>
+        <LineChart
+          data={merged}
+          margin={{ top: 8, right: 16, left: 0, bottom: 0 }}
+          onMouseMove={(state: ChartHoverState) => {
+            setIsRebrandPointHovered(Boolean(state.isTooltipActive && isRebrandMonth(state.activeLabel)));
+          }}
+          onMouseLeave={() => {
+            setIsRebrandPointHovered(false);
+          }}
+        >
           <CartesianGrid strokeDasharray="3 3" stroke="var(--chart-grid)" />
           <XAxis
             dataKey="date"
@@ -106,7 +137,7 @@ export default function RankingChart({ data }: RankingChartProps) {
             wrapperStyle={{ fontSize: 12, paddingTop: 8 }}
             formatter={(value: string) => (value === "twitter" ? "twitter.com" : "x.com")}
           />
-          <RebrandAnnotation />
+          <RebrandAnnotation onHoverChange={setIsRebrandLineHovered} />
           <Line
             type="monotone"
             dataKey="twitter"
@@ -125,6 +156,16 @@ export default function RankingChart({ data }: RankingChartProps) {
           />
         </LineChart>
       </ResponsiveContainer>
+      <p
+        aria-live="polite"
+        className={`min-h-4 text-xs transition-opacity ${
+          showRebrandNote
+            ? "visible text-red-500 opacity-100"
+            : "invisible opacity-0"
+        }`}
+      >
+        Jul 24, 2023: Twitter becomes X.
+      </p>
       {latestTwitter && latestX && (
         <p className="mt-2 text-xs text-gray-500 dark:text-gray-400">
           As of {formatDate(latestTwitter.date)}, twitter.com ranks{" "}
