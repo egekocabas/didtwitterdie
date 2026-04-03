@@ -11,8 +11,10 @@ export default function LoadingSkeleton() {
     <div className="space-y-16">
       {/* Hero skeleton */}
       <div className="text-center space-y-6 py-12">
+        <SkeletonBlock className="mx-auto h-32 w-32 rounded-full sm:h-36 sm:w-36 md:h-40 md:w-40" />
         <SkeletonBlock className="h-8 w-64 mx-auto" />
-        <div className="flex justify-center gap-8 sm:gap-16">
+        <SkeletonBlock className="h-4 w-80 max-w-full mx-auto" />
+        <div className="flex flex-col items-center gap-8 sm:flex-row sm:justify-center sm:gap-16">
           <div className="space-y-3">
             <SkeletonBlock className="h-16 w-32" />
             <SkeletonBlock className="h-4 w-24 mx-auto" />

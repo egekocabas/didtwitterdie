@@ -19,6 +19,7 @@
     "dev:mobile": "npm run dev -- --host",
     "dev:full": "npm run build && wrangler pages dev dist",
     "build": "vite build",
+    "typecheck": "tsc --noEmit",
     "test": "node --test tests/**/*.test.ts",
     "lint": "eslint .",
     "preview": "wrangler pages dev dist",

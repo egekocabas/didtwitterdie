@@ -20,11 +20,7 @@ export function useCountUp(target: number | null, duration = 1200): number | nul
     if (target == null) return;
     if (hasRun.current) return;
     hasRun.current = true;
-
-    if (prefersReducedMotion) {
-      setCount(target);
-      return;
-    }
+    if (prefersReducedMotion) return;
 
     const start = performance.now();
 
@@ -38,5 +34,6 @@ export function useCountUp(target: number | null, duration = 1200): number | nul
     requestAnimationFrame(tick);
   }, [target, duration, prefersReducedMotion]);
 
-  return count;
+  if (target == null) return null;
+  return prefersReducedMotion ? target : count;
 }

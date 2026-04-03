@@ -1,6 +1,7 @@
 import { motion } from "framer-motion";
 import type { RadarData, TrancoData } from "@/types";
 import { useCountUp } from "@/hooks/useCountUp";
+import HeroBloodArt from "@/components/HeroBloodArt";
 
 interface HeroSectionProps {
   radar: RadarData | null;
@@ -22,23 +23,13 @@ export default function HeroSection({ radar, tranco }: HeroSectionProps) {
       whileInView={{ opacity: 1, y: 0 }}
       viewport={{ once: true }}
       transition={{ duration: 0.5 }}
-      className="text-center space-y-6 py-12"
+      className="space-y-6 py-12 text-center"
     >
-      <img
-        src="/icon.svg"
-        alt="Upside-down Twitter bird with X eyes and blood drips"
-        width="160"
-        height="160"
-        fetchPriority="high"
-        className="mx-auto h-32 w-32 sm:h-36 sm:w-36 md:h-40 md:w-40"
-      />
-      <h1 className="text-4xl sm:text-6xl font-bold tracking-tight">
-        Did Twitter Die?
-      </h1>
+      <HeroBloodArt title="Did Twitter Die?" />
       <p className="text-gray-500 dark:text-gray-400 text-lg max-w-xl mx-auto">
         Tracking the slow death (or survival) of Twitter since the rebrand to X on July 24, 2023.
       </p>
-      <div className="flex justify-center gap-8 sm:gap-16 flex-wrap">
+      <div className="flex flex-col items-center gap-8 sm:flex-row sm:justify-center sm:gap-16">
         <div className="space-y-2">
           <p className="text-5xl sm:text-7xl font-bold text-[#1DA1F2]">
             {twitterCount != null ? `#${twitterCount}` : "—"}
