@@ -420,6 +420,17 @@ function Puddle({ puddle, rippleKey, showRipple }: PuddleProps) {
   const gradientSeed = useId().replace(/:/g, "");
   const puddleGradientId = `${gradientSeed}-puddle`;
   const innerGradientId = `${gradientSeed}-puddle-inner`;
+  const impactCx = 120;
+  const impactCy = 50;
+  const primaryRippleStartRx = Math.max(puddle.baseRx * 0.12, 7);
+  const primaryRippleStartRy = Math.max(puddle.baseRy * 0.14, 1.6);
+  const primaryRippleEndRx = Math.max(puddle.baseRx * 0.78, 18);
+  const primaryRippleEndRy = Math.max(puddle.baseRy * 0.66, 4);
+  const secondaryRippleStartRx = Math.max(puddle.baseRx * 0.2, 10);
+  const secondaryRippleStartRy = Math.max(puddle.baseRy * 0.2, 2.2);
+  const secondaryRippleEndRx = Math.max(puddle.baseRx * 1.02, 24);
+  const secondaryRippleEndRy = Math.max(puddle.baseRy * 0.84, 5.2);
+  const showImpactEffects = rippleKey > 1;
 
   return (
     <svg
@@ -488,25 +499,81 @@ function Puddle({ puddle, rippleKey, showRipple }: PuddleProps) {
         />
 
         {showRipple && (
-          <motion.ellipse
-            key={rippleKey}
-            cx="120"
-            cy="56"
-            fill="none"
-            stroke="#f1a7b6"
-            strokeWidth="1.1"
-            initial={{
-              rx: Math.max(puddle.baseRx * 0.2, 10),
-              ry: Math.max(puddle.baseRy * 0.2, 2.5),
-              opacity: 0.38,
-            }}
-            animate={{
-              rx: Math.max(puddle.baseRx * 1.1, 10),
-              ry: Math.max(puddle.baseRy * 0.92, 2.5),
-              opacity: 0,
-            }}
-            transition={{ duration: 0.9, ease: "easeOut" }}
-          />
+          <>
+            {showImpactEffects && (
+              <motion.ellipse
+                key={`impact-flash-${rippleKey}`}
+                cx={impactCx}
+                cy={impactCy}
+                fill="#f5bcc8"
+                initial={{ rx: 4, ry: 0.9, opacity: 0 }}
+                animate={{
+                  rx: [4, 16, 24],
+                  ry: [0.9, 2.6, 1.7],
+                  opacity: [0, 0.28, 0],
+                }}
+                transition={{ duration: 0.42, times: [0, 0.35, 1], ease: "easeOut" }}
+              />
+            )}
+
+            {showImpactEffects && (
+              <>
+                <motion.ellipse
+                  key={`impact-dimple-${rippleKey}`}
+                  cx={impactCx}
+                  cy={impactCy + 0.4}
+                  fill="#6d0f23"
+                  initial={{ rx: 1.6, ry: 0.45, opacity: 0 }}
+                  animate={{
+                    rx: [1.6, 8.5, 5.5],
+                    ry: [0.45, 1.7, 0.9],
+                    opacity: [0, 0.36, 0],
+                  }}
+                  transition={{ duration: 0.48, times: [0, 0.42, 1], ease: "easeOut" }}
+                />
+
+                <motion.ellipse
+                  key={`ripple-primary-${rippleKey}`}
+                  cx={impactCx}
+                  cy={impactCy}
+                  fill="none"
+                  stroke="#f1a7b6"
+                  strokeWidth="1.15"
+                  initial={{
+                    rx: primaryRippleStartRx,
+                    ry: primaryRippleStartRy,
+                    opacity: 0,
+                  }}
+                  animate={{
+                    rx: [primaryRippleStartRx, primaryRippleEndRx],
+                    ry: [primaryRippleStartRy, primaryRippleEndRy],
+                    opacity: [0, 0.5, 0],
+                  }}
+                  transition={{ duration: 0.82, times: [0, 0.22, 1], ease: "easeOut" }}
+                />
+
+                <motion.ellipse
+                  key={`ripple-secondary-${rippleKey}`}
+                  cx={impactCx}
+                  cy={impactCy}
+                  fill="none"
+                  stroke="#f6c5cf"
+                  strokeWidth="0.9"
+                  initial={{
+                    rx: secondaryRippleStartRx,
+                    ry: secondaryRippleStartRy,
+                    opacity: 0,
+                  }}
+                  animate={{
+                    rx: [secondaryRippleStartRx, secondaryRippleEndRx],
+                    ry: [secondaryRippleStartRy, secondaryRippleEndRy],
+                    opacity: [0, 0, 0.34, 0],
+                  }}
+                  transition={{ duration: 1.02, times: [0, 0.18, 0.44, 1], ease: "easeOut" }}
+                />
+              </>
+            )}
+          </>
         )}
       </g>
     </svg>
