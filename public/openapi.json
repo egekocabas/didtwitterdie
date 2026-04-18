@@ -1,0 +1,313 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "Did Twitter Die? Public API",
+    "version": "1.0.0",
+    "description": "Public read-only API for the didtwitterdie.com dataset comparing twitter.com and x.com popularity signals."
+  },
+  "servers": [
+    {
+      "url": "https://didtwitterdie.com"
+    }
+  ],
+  "paths": {
+    "/api/data": {
+      "get": {
+        "summary": "Get the current public dataset",
+        "description": "Returns the current read-only dataset used by the site. Source sections may be null when an upstream source fails, and an errors array may be present in those cases.",
+        "operationId": "getApiData",
+        "responses": {
+          "200": {
+            "description": "Current dataset snapshot",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/status": {
+      "get": {
+        "summary": "Get API status metadata",
+        "description": "Returns lightweight metadata about the public API cache state.",
+        "operationId": "getApiStatus",
+        "responses": {
+          "200": {
+            "description": "Current status",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiStatus"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "RankEntry": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["date", "rank"],
+        "properties": {
+          "date": {
+            "type": "string",
+            "description": "ISO date string in YYYY-MM-DD format."
+          },
+          "rank": {
+            "type": "integer"
+          }
+        }
+      },
+      "PageviewEntry": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["date", "views"],
+        "properties": {
+          "date": {
+            "type": "string",
+            "description": "ISO date string in YYYY-MM-DD format."
+          },
+          "views": {
+            "type": "integer"
+          }
+        }
+      },
+      "RadarDomainInfo": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["bucket"],
+        "properties": {
+          "bucket": {
+            "type": ["string", "null"]
+          }
+        }
+      },
+      "TrancoData": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["twitter", "x"],
+        "properties": {
+          "twitter": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/RankEntry"
+            }
+          },
+          "x": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/RankEntry"
+            }
+          }
+        }
+      },
+      "RadarData": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["twitter", "x"],
+        "properties": {
+          "twitter": {
+            "$ref": "#/components/schemas/RadarDomainInfo"
+          },
+          "x": {
+            "$ref": "#/components/schemas/RadarDomainInfo"
+          }
+        }
+      },
+      "RadarServicesData": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["xTwitter", "latestRank", "category", "asOf"],
+        "properties": {
+          "xTwitter": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/RankEntry"
+            }
+          },
+          "latestRank": {
+            "type": ["integer", "null"]
+          },
+          "category": {
+            "type": "string",
+            "enum": ["Social Media"]
+          },
+          "asOf": {
+            "type": ["string", "null"]
+          }
+        }
+      },
+      "UmbrellaData": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["twitter", "x", "asOf"],
+        "properties": {
+          "twitter": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/RankEntry"
+            }
+          },
+          "x": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/RankEntry"
+            }
+          },
+          "asOf": {
+            "type": ["string", "null"]
+          },
+          "historyLagDays": {
+            "type": "integer"
+          }
+        }
+      },
+      "MajesticData": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["twitter", "x", "asOf"],
+        "properties": {
+          "twitter": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/RankEntry"
+            }
+          },
+          "x": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/RankEntry"
+            }
+          },
+          "asOf": {
+            "type": ["string", "null"]
+          }
+        }
+      },
+      "WikipediaData": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["twitter", "x", "asOf"],
+        "properties": {
+          "twitter": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/PageviewEntry"
+            }
+          },
+          "x": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/PageviewEntry"
+            }
+          },
+          "asOf": {
+            "type": ["string", "null"]
+          }
+        }
+      },
+      "ApiResponse": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "radar",
+          "trends",
+          "tranco",
+          "radarServices",
+          "umbrella",
+          "majestic",
+          "wikipedia",
+          "updated_at"
+        ],
+        "properties": {
+          "radar": {
+            "anyOf": [
+              { "$ref": "#/components/schemas/RadarData" },
+              { "type": "null" }
+            ]
+          },
+          "trends": {
+            "type": "null",
+            "description": "Reserved field. Currently always null."
+          },
+          "tranco": {
+            "anyOf": [
+              { "$ref": "#/components/schemas/TrancoData" },
+              { "type": "null" }
+            ]
+          },
+          "radarServices": {
+            "anyOf": [
+              { "$ref": "#/components/schemas/RadarServicesData" },
+              { "type": "null" }
+            ]
+          },
+          "umbrella": {
+            "anyOf": [
+              { "$ref": "#/components/schemas/UmbrellaData" },
+              { "type": "null" }
+            ]
+          },
+          "majestic": {
+            "anyOf": [
+              { "$ref": "#/components/schemas/MajesticData" },
+              { "type": "null" }
+            ]
+          },
+          "wikipedia": {
+            "anyOf": [
+              { "$ref": "#/components/schemas/WikipediaData" },
+              { "type": "null" }
+            ]
+          },
+          "updated_at": {
+            "type": "integer",
+            "description": "Unix timestamp in milliseconds."
+          },
+          "errors": {
+            "type": "array",
+            "description": "Present when one or more upstream sources fail.",
+            "items": {
+              "type": "string"
+            }
+          }
+        }
+      },
+      "ApiStatus": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["ok", "service", "public", "updated_at", "last_refreshed"],
+        "properties": {
+          "ok": {
+            "type": "boolean",
+            "const": true
+          },
+          "service": {
+            "type": "string",
+            "const": "didtwitterdie"
+          },
+          "public": {
+            "type": "boolean",
+            "const": true
+          },
+          "updated_at": {
+            "type": ["integer", "null"],
+            "description": "Latest cached dataset timestamp in milliseconds, or null if unavailable."
+          },
+          "last_refreshed": {
+            "type": ["string", "null"],
+            "description": "Latest scheduled refresh timestamp as an ISO-8601 string, or null if unavailable."
+          }
+        }
+      }
+    }
+  }
+}

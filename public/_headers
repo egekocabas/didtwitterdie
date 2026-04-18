@@ -14,6 +14,11 @@
 /
   Cache-Control: public, max-age=0, must-revalidate
   Link: <https://didtwitterdie.com/>; rel="canonical"
+  Link: </.well-known/api-catalog>; rel="api-catalog"
+  Link: </api-docs.html>; rel="service-doc"
+
+/openapi.json
+  Content-Type: application/openapi+json; charset=utf-8
 
 /api/*
   X-Robots-Tag: noindex, nofollow

@@ -79,6 +79,10 @@ const RESPONSE_HEADERS: Record<string, string> = {
   "Content-Type": "application/json",
   "Access-Control-Allow-Origin": "*",
   "Cache-Control": "public, max-age=3600",
+  Link:
+    '</openapi.json>; rel="service-desc"; type="application/openapi+json", ' +
+    '</api-docs.html>; rel="service-doc"; type="text/html", ' +
+    '</api/status>; rel="status"; type="application/json"',
 };
 
 async function fetchRadarData(env: Env): Promise<RadarData> {
