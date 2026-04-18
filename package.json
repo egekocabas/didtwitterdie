@@ -21,7 +21,7 @@
     "build": "vite build",
     "typecheck": "tsc --noEmit",
     "test": "node --test tests/**/*.test.ts",
-    "lint": "eslint .",
+    "lint": "eslint . --max-warnings=0",
     "preview": "wrangler pages dev dist",
     "deploy": "wrangler pages deploy dist"
   },
