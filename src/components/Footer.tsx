@@ -79,6 +79,12 @@ export default function Footer({ updatedAt, currentPage = "dashboard" }: FooterP
             </a>
           )}
           <a
+            href="mailto:contact@didtwitterdie.com"
+            className="font-medium underline underline-offset-4 transition-colors hover:text-gray-700 dark:hover:text-gray-200"
+          >
+            contact@didtwitterdie.com
+          </a>
+          <a
             href={buildInfo.repositoryUrl}
             target="_blank"
             rel="noopener noreferrer"
