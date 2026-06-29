@@ -8,6 +8,7 @@ import HeroSection from "@/components/HeroSection";
 import MethodologyPage from "@/pages/MethodologyPage";
 import NotFoundPage from "@/pages/NotFoundPage";
 import PrivacyPage from "@/pages/PrivacyPage";
+import type { TrancoData } from "@/types";
 
 const TrendsChart = lazy(() => import("@/components/TrendsChart"));
 const RankingChart = lazy(() => import("@/components/RankingChart"));
@@ -27,6 +28,15 @@ function ErrorState({ message }: ErrorStateProps) {
       <p className="text-sm text-gray-500 dark:text-gray-400">{message}</p>
     </div>
   );
+}
+
+function getLatestTrancoRankDate(tranco: TrancoData | null): string | null {
+  const dates = [
+    tranco?.twitter?.at(-1)?.date,
+    tranco?.x?.at(-1)?.date,
+  ].filter((date): date is string => Boolean(date));
+
+  return dates.sort((a, b) => a.localeCompare(b)).at(-1) ?? null;
 }
 
 function DashboardPage() {
@@ -69,7 +79,11 @@ function DashboardPage() {
           <SocialMediaServiceSection data={data.radarServices} />
           <VerdictSection data={data} />
         </Suspense>
-        <Footer updatedAt={data.updated_at} currentPage="dashboard" />
+        <Footer
+          updatedAt={data.updated_at}
+          latestTrancoRankDate={getLatestTrancoRankDate(data.tranco)}
+          currentPage="dashboard"
+        />
       </div>
     </Layout>
   );

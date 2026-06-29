@@ -48,6 +48,19 @@ export function mergeHistory(existing: RankEntry[], incoming: RankEntry[]): Rank
     .sort((a, b) => a.date.localeCompare(b.date));
 }
 
+export function mergeDomainRankHistory(
+  existing: DomainRankHistory,
+  incoming: {
+    twitter?: RankEntry[] | null;
+    x?: RankEntry[] | null;
+  },
+): DomainRankHistory {
+  return {
+    twitter: incoming.twitter ? mergeHistory(existing.twitter, incoming.twitter) : existing.twitter,
+    x: incoming.x ? mergeHistory(existing.x, incoming.x) : existing.x,
+  };
+}
+
 export function appendDomainRanks(
   existing: DomainRankHistory,
   date: string,

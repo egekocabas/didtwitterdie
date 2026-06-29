@@ -19,7 +19,7 @@ import {
   getQuarterlyBackfillDates,
   getNextMissingBackfillDate,
   getLatestBackfilledQuarterDate,
-  mergeHistory,
+  mergeDomainRankHistory,
   parseMajesticCsv,
   parseUmbrellaCsv,
   parseWikipediaPageviews,
@@ -28,6 +28,8 @@ import {
 
 const RADAR_BASE = "https://api.cloudflare.com/client/v4/radar/ranking";
 const TRANCO_BASE = "https://tranco-list.eu/api/ranks/domain";
+const TRANCO_REQUEST_DELAY_MS = 1250;
+const TRANCO_MAX_ATTEMPTS = 3;
 const UMBRELLA_CURRENT_URL = "https://s3-us-west-1.amazonaws.com/umbrella-static/top-1m.csv.zip";
 const UMBRELLA_ARCHIVE_URL = "https://s3-us-west-1.amazonaws.com/umbrella-static/top-1m-";
 const MAJESTIC_URL = "https://downloads.majestic.com/majestic_million.csv";
@@ -148,29 +150,63 @@ async function fetchRadarServicesData(env: Env): Promise<RadarServicesData> {
 }
 
 async function fetchTrancoData(env: Env): Promise<TrancoData> {
-  const twitterRes = await fetch(`${TRANCO_BASE}/twitter.com`);
-  if (!twitterRes.ok) {
-    throw new Error(`Tranco fetch failed: twitter=${twitterRes.status}`);
+  const existing = await getStoredTrancoData(env);
+  const twitterResult = await settle(fetchTrancoRanks("twitter.com"));
+  await sleep(TRANCO_REQUEST_DELAY_MS);
+  const xResult = await settle(fetchTrancoRanks("x.com"));
+
+  const history = mergeDomainRankHistory(existing, {
+    twitter: twitterResult.status === "fulfilled" ? twitterResult.value : null,
+    x: xResult.status === "fulfilled" ? xResult.value : null,
+  });
+
+  if (twitterResult.status === "rejected" || xResult.status === "rejected") {
+    console.warn("Tranco refresh used cached history", {
+      twitter: twitterResult.status === "rejected" ? getErrorMessage(twitterResult.reason) : "ok",
+      x: xResult.status === "rejected" ? getErrorMessage(xResult.reason) : "ok",
+    });
   }
-  const twitterJson = await parseJsonObject(twitterRes);
 
-  await new Promise((resolve) => setTimeout(resolve, 500));
+  await env.CACHE.put("tranco_history", JSON.stringify(history));
 
-  const xRes = await fetch(`${TRANCO_BASE}/x.com`);
-  if (!xRes.ok) {
-    throw new Error(`Tranco fetch failed: x=${xRes.status}`);
+  return history;
+}
+
+async function fetchTrancoRanks(domain: "twitter.com" | "x.com"): Promise<RankEntry[]> {
+  let lastStatus: number | null = null;
+
+  for (let attempt = 1; attempt <= TRANCO_MAX_ATTEMPTS; attempt += 1) {
+    const res = await fetch(`${TRANCO_BASE}/${domain}`);
+    lastStatus = res.status;
+
+    if (res.ok) {
+      const json = await parseJsonObject(res);
+      return (json?.ranks as RankEntry[]) ?? [];
+    }
+
+    if (res.status !== 429 || attempt === TRANCO_MAX_ATTEMPTS) {
+      break;
+    }
+
+    await sleep(getRetryDelayMs(res));
   }
-  const xJson = await parseJsonObject(xRes);
 
-  const twitterRanks = (twitterJson?.ranks as RankEntry[]) ?? [];
-  const xRanks = (xJson?.ranks as RankEntry[]) ?? [];
-  const existing = (await env.CACHE.get<TrancoData>("tranco_history", "json")) ?? TRANCO_SEED;
-  const twitterHistory = mergeHistory(existing.twitter, twitterRanks);
-  const xHistory = mergeHistory(existing.x, xRanks);
+  throw new Error(`Tranco fetch failed: ${domain}=${lastStatus ?? "unknown"}`);
+}
 
-  await env.CACHE.put("tranco_history", JSON.stringify({ twitter: twitterHistory, x: xHistory }));
+async function getStoredTrancoData(env: Env): Promise<TrancoData> {
+  return (await env.CACHE.get<TrancoData>("tranco_history", "json")) ?? TRANCO_SEED;
+}
 
-  return { twitter: twitterHistory, x: xHistory };
+function getRetryDelayMs(response: Response): number {
+  const retryAfter = Number.parseInt(response.headers.get("retry-after") ?? "", 10);
+  return Number.isFinite(retryAfter) && retryAfter > 0
+    ? retryAfter * 1000
+    : TRANCO_REQUEST_DELAY_MS;
+}
+
+function sleep(ms: number): Promise<void> {
+  return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
 async function fetchUmbrellaData(env: Env): Promise<UmbrellaData> {

@@ -8,6 +8,7 @@ import {
   extractSingleZipEntryText,
   getLatestBackfilledQuarterDate,
   getNextMissingBackfillDate,
+  mergeDomainRankHistory,
   parseMajesticCsv,
   parseUmbrellaCsv,
 } from "#functions/lib/comparisonData";
@@ -88,6 +89,27 @@ test("appendDomainRanks preserves existing history when a source has missing ran
       { date: "2026-03-30", rank: 2886 },
       { date: "2026-03-31", rank: 3000 },
     ],
+  });
+});
+
+test("mergeDomainRankHistory preserves cached history when one live source is missing", () => {
+  const history = mergeDomainRankHistory(
+    {
+      twitter: [{ date: "2026-06-27", rank: 16 }],
+      x: [{ date: "2026-06-27", rank: 53 }],
+    },
+    {
+      twitter: [{ date: "2026-06-28", rank: 15 }],
+      x: null,
+    },
+  );
+
+  assert.deepEqual(history, {
+    twitter: [
+      { date: "2026-06-27", rank: 16 },
+      { date: "2026-06-28", rank: 15 },
+    ],
+    x: [{ date: "2026-06-27", rank: 53 }],
   });
 });
 

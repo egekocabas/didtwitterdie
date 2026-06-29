@@ -3,7 +3,14 @@ import GitHubIcon from "@/components/GitHubIcon";
 
 interface FooterProps {
   updatedAt?: number | null;
+  latestTrancoRankDate?: string | null;
   currentPage?: "dashboard" | "methodology" | "privacy" | "not-found";
+}
+
+function formatFooterDate(value: string): string {
+  const [year, month, day] = value.split("-");
+  if (!year || !month || !day) return value;
+  return `${day}.${month}.${year}`;
 }
 
 function formatFooterDateTime(value: number | string): string {
@@ -17,15 +24,40 @@ function formatFooterDateTime(value: number | string): string {
   return `${day}.${month}.${year}, ${hours}:${minutes}`;
 }
 
-export default function Footer({ updatedAt, currentPage = "dashboard" }: FooterProps) {
+export default function Footer({
+  updatedAt,
+  latestTrancoRankDate,
+  currentPage = "dashboard",
+}: FooterProps) {
   const formatted = updatedAt ? formatFooterDateTime(updatedAt) : null;
+  const formattedLatestTrancoRankDate = latestTrancoRankDate
+    ? formatFooterDate(latestTrancoRankDate)
+    : null;
   const formattedBuildTime = buildInfo.buildTime ? formatFooterDateTime(buildInfo.buildTime) : null;
+  const refreshTooltip = formattedLatestTrancoRankDate
+    ? `Latest Tranco rank date: ${formattedLatestTrancoRankDate}`
+    : null;
 
   return (
     <footer className="mt-20 border-t border-gray-200 pb-8 pt-6 text-sm text-gray-500 dark:border-gray-800 dark:text-gray-400">
       <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
         <div className="flex flex-col items-center gap-1 text-center text-xs sm:items-start sm:text-left sm:text-sm">
-          {formatted && <span>Data updated {formatted}</span>}
+          {formatted && (
+            <span
+              tabIndex={refreshTooltip ? 0 : undefined}
+              className="group relative inline-flex cursor-help outline-none"
+            >
+              Last refreshed {formatted}
+              {refreshTooltip && (
+                <span
+                  role="tooltip"
+                  className="pointer-events-none absolute bottom-full left-1/2 z-20 mb-2 w-max max-w-[min(320px,calc(100vw-2rem))] -translate-x-1/2 whitespace-nowrap rounded-md border border-gray-200 bg-white px-3 py-1.5 text-center text-xs text-gray-600 opacity-0 shadow-lg transition-opacity group-hover:opacity-100 group-focus-visible:opacity-100 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-300 sm:left-0 sm:translate-x-0 sm:text-left"
+                >
+                  {refreshTooltip}
+                </span>
+              )}
+            </span>
+          )}
           {(buildInfo.shortBuildSha || formattedBuildTime) && (
             <div className="flex flex-wrap items-center justify-center gap-x-2 gap-y-1 sm:justify-start">
               <span>
