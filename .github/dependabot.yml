@@ -18,6 +18,11 @@ updates:
       - dependency-name: "@eslint/js"
         update-types:
           - "version-update:semver-major"
+      # typescript-eslint@8.63.0 supports TypeScript >=4.8.4 <6.1.0.
+      # Drop this once its peer range includes TypeScript 7.
+      - dependency-name: "typescript"
+        versions:
+          - ">=7 <8"
     groups:
       all-dependencies:
         applies-to: version-updates
